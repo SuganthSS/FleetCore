@@ -37,6 +37,8 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
+  users User[]
+
   @@index([name])
   @@index([registrationNumber])
   @@index([status])
@@ -99,6 +101,8 @@ model Role {
   /// Last modification timestamp
   updatedAt   DateTime @updatedAt
 
+  users User[]
+
   @@index([isSystem])
   @@index([createdAt])
 }
@@ -122,6 +126,91 @@ model Role {
 - `@@index([isSystem])`: Fast filtering for system vs user-created custom roles.
 - `@@index([createdAt])`: Chronological sorting and audit queries.
 
-### Relationships (Upcoming)
+---
 
-- `users`: One-to-many relationship mapping `Role` to assigned `User` accounts (`Role 1 -> N Users`).
+## 👤 User Model
+
+The `User` model represents application identity, authentication credentials storage, corporate structure assignment, and account status within FleetCore.
+
+### Schema Definition
+
+```prisma
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+/// --------------------------------------------
+/// User
+/// Represents an application user.
+/// Users belong to a Company
+/// and are assigned a Role.
+/// --------------------------------------------
+model User {
+  id            String     @id @default(uuid())
+  firstName     String
+  lastName      String
+  email         String     @unique
+  phone         String?
+  passwordHash  String
+  companyId     String
+  roleId        String
+  department    String?
+  designation   String?
+  avatarUrl     String?
+  status        UserStatus @default(ACTIVE)
+  emailVerified Boolean    @default(false)
+  lastLogin     DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role    Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@index([companyId])
+  @@index([roleId])
+  @@index([status])
+  @@index([department])
+  @@index([createdAt])
+  @@index([lastLogin])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `firstName` | `String` | Required | User given name |
+| `lastName` | `String` | Required | User surname |
+| `email` | `String` | Required, `@unique` | Contact & authentication email address |
+| `phone` | `String` | Optional | Contact phone number |
+| `passwordHash` | `String` | Required | Encrypted password storage string |
+| `companyId` | `String` | Foreign Key | References `Company.id` |
+| `roleId` | `String` | Foreign Key | References `Role.id` |
+| `department` | `String` | Optional | Corporate department (e.g., Operations) |
+| `designation` | `String` | Optional | Job title / position |
+| `avatarUrl` | `String` | Optional | Profile avatar image URL |
+| `status` | `UserStatus` | `@default(ACTIVE)` | Operational account state (`ACTIVE`, `INACTIVE`, `SUSPENDED`, `PENDING_VERIFICATION`) |
+| `emailVerified` | `Boolean` | `@default(false)` | Flag indicating verified email address |
+| `lastLogin` | `DateTime` | Optional | Timestamp of last user sign-in |
+| `createdAt` | `DateTime` | `@default(now())` | Account creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Account modification timestamp |
+
+### Indexes
+
+- `@unique` on `email`: Guarantees global uniqueness for login emails.
+- `@@index([companyId])`: Multi-tenant filtering and organization queries.
+- `@@index([roleId])`: RBAC permission checks and role assignment filtering.
+- `@@index([status])`: Quick retrieval of active/suspended users.
+- `@@index([department])`: Filtering users by corporate department.
+- `@@index([createdAt])`: Chronological account registration auditing.
+- `@@index([lastLogin])`: Security monitoring & inactive user identifying queries.
+
+### Relationships
+
+- `company`: `User N -> 1 Company` (`onDelete: Cascade`)
+- `role`: `User N -> 1 Role` (`onDelete: Restrict`)
+- **Future Relations**: Prepared for `DriverProfile`, `Notification`, `CreatedRecords`, and `UpdatedRecords`.

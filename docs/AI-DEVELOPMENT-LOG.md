@@ -15,4 +15,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-002B** | ML Engine CI Repair | Completed | 2026-08-02 | `8d657e83874322a42ddc18a1885255743592d7ac` |
 | **SPEC-002C** | Fix ML Package Imports | Completed | 2026-08-02 | `6a76d3485520cf63c529f8d06f655b33d80f1a30` |
 | **SPEC-003** | Company Model | Completed | 2026-08-02 | `a612e18b8ba4b8075923244774e0871f38c065c3` |
-| **SPEC-004** | Role Model | Completed | 2026-08-02 | `6155deaed00e2be19b9e1fd9204823ae16db8721` |
+| **SPEC-004** | Role Model | Completed | 2026-08-02 | `15f110224c8f9c4676f4e2e354b3126911d1cafa` |
+| **SPEC-005** | User Model | Completed | 2026-08-02 | `de7e97536d654aa712e757c0fe394034db509dd4` |

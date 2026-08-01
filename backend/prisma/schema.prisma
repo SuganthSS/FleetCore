@@ -21,6 +21,13 @@ enum CompanyStatus {
   PENDING_VERIFICATION
 }
 
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
 model Company {
   id                 String        @id @default(uuid())
   name               String
@@ -39,6 +46,8 @@ model Company {
   status             CompanyStatus @default(ACTIVE)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
+
+  users User[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -63,6 +72,61 @@ model Role {
   /// Last modification timestamp
   updatedAt   DateTime @updatedAt
 
+  users User[]
+
   @@index([isSystem])
   @@index([createdAt])
+}
+
+/// --------------------------------------------
+/// User
+/// Represents an application user.
+/// Users belong to a Company
+/// and are assigned a Role.
+/// --------------------------------------------
+model User {
+  /// Primary key UUID
+  id            String     @id @default(uuid())
+  /// First name of user
+  firstName     String
+  /// Last name of user
+  lastName      String
+  /// Unique contact & login email address
+  email         String     @unique
+  /// Contact phone number
+  phone         String?
+  /// Encrypted password hash storage
+  passwordHash  String
+  /// Foreign key referencing parent Company
+  companyId     String
+  /// Foreign key referencing assigned Role
+  roleId        String
+  /// Organization department (e.g. Logistics, Fleet Operations)
+  department    String?
+  /// Job title or designation
+  designation   String?
+  /// Profile avatar URL
+  avatarUrl     String?
+  /// Account operational status
+  status        UserStatus @default(ACTIVE)
+  /// Email verification flag
+  emailVerified Boolean    @default(false)
+  /// Last login timestamp
+  lastLogin     DateTime?
+  /// Creation timestamp
+  createdAt     DateTime   @default(now())
+  /// Last modification timestamp
+  updatedAt     DateTime   @updatedAt
+
+  /// Parent Company relation
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  /// Assigned Role relation
+  role    Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@index([companyId])
+  @@index([roleId])
+  @@index([status])
+  @@index([department])
+  @@index([createdAt])
+  @@index([lastLogin])
 }
