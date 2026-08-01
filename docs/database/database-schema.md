@@ -37,7 +37,8 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users User[]
+  users   User[]
+  drivers Driver[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -166,8 +167,9 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  role    Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  company       Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role          Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  driverProfile Driver?
 
   @@index([companyId])
   @@index([roleId])
@@ -209,8 +211,92 @@ model User {
 - `@@index([createdAt])`: Chronological account registration auditing.
 - `@@index([lastLogin])`: Security monitoring & inactive user identifying queries.
 
+---
+
+## 🚚 Driver Model
+
+The `Driver` model extends a `User` account with operational driving credentials, commercial license tracking, duty availability state, and company organization.
+
+### Schema Definition
+
+```prisma
+enum DriverAvailability {
+  AVAILABLE
+  ON_TRIP
+  OFF_DUTY
+  ON_LEAVE
+  SUSPENDED
+}
+
+enum ExperienceLevel {
+  JUNIOR
+  MID
+  SENIOR
+  EXPERT
+}
+
+/// --------------------------------------------
+/// Driver
+/// Represents an operational driver profile.
+/// Extends a User account and belongs to a Company.
+/// --------------------------------------------
+model Driver {
+  id                    String             @id @default(uuid())
+  employeeId            String             @unique
+  experienceLevel       ExperienceLevel    @default(MID)
+  availability          DriverAvailability @default(AVAILABLE)
+  licenseNumber         String             @unique
+  licenseExpiry         DateTime
+  joiningDate           DateTime?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  userId                String             @unique
+  companyId             String
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([availability])
+  @@index([experienceLevel])
+  @@index([licenseExpiry])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `employeeId` | `String` | Required, `@unique` | Internal company driver employee code |
+| `experienceLevel` | `ExperienceLevel` | `@default(MID)` | Driver experience rating (`JUNIOR`, `MID`, `SENIOR`, `EXPERT`) |
+| `availability` | `DriverAvailability` | `@default(AVAILABLE)` | Operational duty availability state (`AVAILABLE`, `ON_TRIP`, `OFF_DUTY`, `ON_LEAVE`, `SUSPENDED`) |
+| `licenseNumber` | `String` | Required, `@unique` | Government commercial driving license ID |
+| `licenseExpiry` | `DateTime` | Required | Commercial driver license expiration date |
+| `joiningDate` | `DateTime` | Optional | Date driver joined company employment |
+| `emergencyContactName` | `String` | Optional | Emergency contact person name |
+| `emergencyContactPhone` | `String` | Optional | Emergency contact person phone number |
+| `userId` | `String` | Foreign Key, `@unique` | 1-to-1 extension link to `User.id` |
+| `companyId` | `String` | Foreign Key | Parent company link to `Company.id` |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Modification timestamp |
+
+### Indexes
+
+- `@unique` on `employeeId`: Prevents duplicate employee IDs across companies.
+- `@unique` on `licenseNumber`: Prevents duplicate driver license numbers.
+- `@unique` on `userId`: Enforces strict 1-to-1 extension of a User account.
+- `@@index([companyId])`: Fast filtering for company driver rosters.
+- `@@index([availability])`: Real-time driver dispatch availability queries.
+- `@@index([experienceLevel])`: Filtering drivers by experience tier for complex assignments.
+- `@@index([licenseExpiry])`: Automated license renewal alerts and compliance monitoring.
+- `@@index([createdAt])`: Driver onboarding analytics and chronological tracking.
+
 ### Relationships
 
-- `company`: `User N -> 1 Company` (`onDelete: Cascade`)
-- `role`: `User N -> 1 Role` (`onDelete: Restrict`)
-- **Future Relations**: Prepared for `DriverProfile`, `Notification`, `CreatedRecords`, and `UpdatedRecords`.
+- `user`: `Driver 1 <-> 1 User` (`onDelete: Cascade`)
+- `company`: `Driver N -> 1 Company` (`onDelete: Cascade`)
+- **Future Relations**: Prepared for `Vehicles`, `Trips`, `FuelRecords`, and `MaintenanceRecords`.

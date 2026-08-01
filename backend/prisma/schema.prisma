@@ -28,6 +28,21 @@ enum UserStatus {
   PENDING_VERIFICATION
 }
 
+enum DriverAvailability {
+  AVAILABLE
+  ON_TRIP
+  OFF_DUTY
+  ON_LEAVE
+  SUSPENDED
+}
+
+enum ExperienceLevel {
+  JUNIOR
+  MID
+  SENIOR
+  EXPERT
+}
+
 model Company {
   id                 String        @id @default(uuid())
   name               String
@@ -47,7 +62,8 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users User[]
+  users   User[]
+  drivers Driver[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -119,9 +135,11 @@ model User {
   updatedAt     DateTime   @updatedAt
 
   /// Parent Company relation
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company       Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   /// Assigned Role relation
-  role    Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  role          Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  /// Optional Driver profile extension
+  driverProfile Driver?
 
   @@index([companyId])
   @@index([roleId])
@@ -129,4 +147,49 @@ model User {
   @@index([department])
   @@index([createdAt])
   @@index([lastLogin])
+}
+
+/// --------------------------------------------
+/// Driver
+/// Represents an operational driver profile.
+/// Extends a User account and belongs to a Company.
+/// --------------------------------------------
+model Driver {
+  /// Primary key UUID
+  id                    String             @id @default(uuid())
+  /// Unique company employee identification code
+  employeeId            String             @unique
+  /// Driving experience level classification
+  experienceLevel       ExperienceLevel    @default(MID)
+  /// Current operational duty availability status
+  availability          DriverAvailability @default(AVAILABLE)
+  /// Commercial driver license number
+  licenseNumber         String             @unique
+  /// License expiration date
+  licenseExpiry         DateTime
+  /// Employment start date
+  joiningDate           DateTime?
+  /// Emergency contact person name
+  emergencyContactName  String?
+  /// Emergency contact person phone number
+  emergencyContactPhone String?
+  /// Foreign key referencing associated User account
+  userId                String             @unique
+  /// Foreign key referencing parent Company
+  companyId             String
+  /// Creation timestamp
+  createdAt             DateTime           @default(now())
+  /// Last modification timestamp
+  updatedAt             DateTime           @updatedAt
+
+  /// Associated User account relation
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Parent Company relation
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([availability])
+  @@index([experienceLevel])
+  @@index([licenseExpiry])
+  @@index([createdAt])
 }
