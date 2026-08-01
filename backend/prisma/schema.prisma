@@ -76,6 +76,22 @@ enum CustomerStatus {
   PENDING_VERIFICATION
 }
 
+enum ShipmentPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ShipmentStatus {
+  PENDING
+  DISPATCHED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  FAILED
+}
+
 model Company {
   id                 String        @id @default(uuid())
   name               String
@@ -99,6 +115,7 @@ model Company {
   drivers   Driver[]
   vehicles  Vehicle[]
   customers Customer[]
+  shipments Shipment[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -312,11 +329,87 @@ model Customer {
   updatedAt     DateTime       @updatedAt
 
   /// Parent Company relation
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shipments Shipment[]
 
   @@index([companyId])
   @@index([customerCode])
   @@index([companyName])
   @@index([status])
+  @@index([createdAt])
+}
+
+/// --------------------------------------------
+/// Shipment
+/// Represents a business request to transport goods.
+/// Belongs to a Customer and a Company.
+/// Vehicle and driver assignment is handled dynamically via Trip.
+/// --------------------------------------------
+model Shipment {
+  /// Primary key UUID
+  id                   String           @id @default(uuid())
+  /// Unique shipment tracking reference number
+  shipmentNumber       String           @unique
+  /// Short title or name of the shipment request
+  title                String
+  /// Detailed description of cargo contents or instructions
+  description          String?
+  /// Type or category of cargo (e.g. Perishable, Electronics, Bulk)
+  cargoType            String?
+  /// Total weight of cargo (e.g. in kg)
+  weight               Float?
+  /// Total volume of cargo (e.g. in cubic meters)
+  volume               Float?
+  /// Quantity of items or packages
+  quantity             Int?
+  /// Origin pickup street address
+  pickupAddress        String
+  /// Origin pickup city
+  pickupCity           String
+  /// Origin pickup state / province
+  pickupState          String?
+  /// Origin pickup country
+  pickupCountry        String
+  /// Origin pickup postal / ZIP code
+  pickupPostalCode     String?
+  /// Scheduled or actual pickup date
+  pickupDate           DateTime?
+  /// Destination delivery street address
+  deliveryAddress      String
+  /// Destination delivery city
+  deliveryCity         String
+  /// Destination delivery state / province
+  deliveryState        String?
+  /// Destination delivery country
+  deliveryCountry      String
+  /// Destination delivery postal / ZIP code
+  deliveryPostalCode   String?
+  /// Expected or scheduled delivery date
+  expectedDeliveryDate DateTime?
+  /// Dispatch urgency priority level
+  priority             ShipmentPriority @default(MEDIUM)
+  /// Lifecycle status of the shipment request
+  status               ShipmentStatus   @default(PENDING)
+  /// Foreign key referencing requesting Customer
+  customerId           String
+  /// Foreign key referencing parent Company
+  companyId            String
+  /// Creation timestamp
+  createdAt            DateTime         @default(now())
+  /// Last modification timestamp
+  updatedAt            DateTime         @updatedAt
+
+  /// Requesting Customer relation
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// Parent Company relation
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([customerId])
+  @@index([shipmentNumber])
+  @@index([status])
+  @@index([priority])
+  @@index([pickupDate])
+  @@index([expectedDeliveryDate])
   @@index([createdAt])
 }

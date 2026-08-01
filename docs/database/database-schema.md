@@ -41,6 +41,7 @@ model Company {
   drivers   Driver[]
   vehicles  Vehicle[]
   customers Customer[]
+  shipments Shipment[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -436,7 +437,8 @@ model Customer {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  shipments Shipment[]
 
   @@index([companyId])
   @@index([customerCode])
@@ -475,7 +477,124 @@ model Customer {
 - `@@index([status])`: Filtering active vs inactive customer accounts.
 - `@@index([createdAt])`: Chronological customer registration tracking.
 
+---
+
+## 📦 Shipment Model
+
+The `Shipment` model represents a business request to transport goods. It belongs to a requesting `Customer` and parent `Company`, existing independently of vehicle and driver assignment (which is handled dynamically via `Trip`).
+
+### Schema Definition
+
+```prisma
+enum ShipmentPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ShipmentStatus {
+  PENDING
+  DISPATCHED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  FAILED
+}
+
+/// --------------------------------------------
+/// Shipment
+/// Represents a business request to transport goods.
+/// Belongs to a Customer and a Company.
+/// Vehicle and driver assignment is handled dynamically via Trip.
+/// --------------------------------------------
+model Shipment {
+  id                   String           @id @default(uuid())
+  shipmentNumber       String           @unique
+  title                String
+  description          String?
+  cargoType            String?
+  weight               Float?
+  volume               Float?
+  quantity             Int?
+  pickupAddress        String
+  pickupCity           String
+  pickupState          String?
+  pickupCountry        String
+  pickupPostalCode     String?
+  pickupDate           DateTime?
+  deliveryAddress      String
+  deliveryCity         String
+  deliveryState        String?
+  deliveryCountry      String
+  deliveryPostalCode   String?
+  expectedDeliveryDate DateTime?
+  priority             ShipmentPriority @default(MEDIUM)
+  status               ShipmentStatus   @default(PENDING)
+  customerId           String
+  companyId            String
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([customerId])
+  @@index([shipmentNumber])
+  @@index([status])
+  @@index([priority])
+  @@index([pickupDate])
+  @@index([expectedDeliveryDate])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `shipmentNumber` | `String` | Required, `@unique` | Unique shipment tracking reference number |
+| `title` | `String` | Required | Short title or cargo request summary |
+| `description` | `String` | Optional | Detailed cargo description or instructions |
+| `cargoType` | `String` | Optional | Cargo category classification |
+| `weight` | `Float` | Optional | Total weight of cargo (e.g. kg) |
+| `volume` | `Float` | Optional | Total volume of cargo (e.g. m³) |
+| `quantity` | `Int` | Optional | Package item count |
+| `pickupAddress` | `String` | Required | Origin pickup street address |
+| `pickupCity` | `String` | Required | Origin pickup city |
+| `pickupState` | `String` | Optional | Origin pickup state / province |
+| `pickupCountry` | `String` | Required | Origin pickup country |
+| `pickupPostalCode` | `String` | Optional | Origin pickup ZIP / postal code |
+| `pickupDate` | `DateTime` | Optional | Scheduled pickup date |
+| `deliveryAddress` | `String` | Required | Destination delivery street address |
+| `deliveryCity` | `String` | Required | Destination delivery city |
+| `deliveryState` | `String` | Optional | Destination delivery state / province |
+| `deliveryCountry` | `String` | Required | Destination delivery country |
+| `deliveryPostalCode` | `String` | Optional | Destination delivery ZIP / postal code |
+| `expectedDeliveryDate` | `DateTime` | Optional | Expected delivery date |
+| `priority` | `ShipmentPriority` | `@default(MEDIUM)` | Dispatch priority (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) |
+| `status` | `ShipmentStatus` | `@default(PENDING)` | Lifecycle state (`PENDING`, `DISPATCHED`, `IN_TRANSIT`, `DELIVERED`, `CANCELLED`, `FAILED`) |
+| `customerId` | `String` | Foreign Key | References `Customer.id` |
+| `companyId` | `String` | Foreign Key | References `Company.id` |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Modification timestamp |
+
+### Indexes
+
+- `@unique` on `shipmentNumber`: Ensures unique tracking numbers across FleetCore.
+- `@@index([companyId])`: Multi-tenant shipment filtering.
+- `@@index([customerId])`: Fast filtering for client order portals.
+- `@@index([shipmentNumber])`: Search and tracking lookups.
+- `@@index([status])`: Dispatch planning and status monitoring.
+- `@@index([priority])`: Urgent shipment queue filtering.
+- `@@index([pickupDate])`: Dispatch scheduling queries.
+- `@@index([expectedDeliveryDate])`: SLA tracking and delivery deadline alerts.
+- `@@index([createdAt])`: Chronological shipment analytics.
+
 ### Relationships
 
-- `company`: `Customer N -> 1 Company` (`onDelete: Cascade`)
-- **Future Relations**: Prepared for `Shipments`, `Invoices`, and `Notifications`.
+- `customer`: `Shipment N -> 1 Customer` (`onDelete: Cascade`)
+- `company`: `Shipment N -> 1 Company` (`onDelete: Cascade`)
+- **Future Relations**: Prepared for `Route`, `Trip`, `Notifications`, and `Documents`.
