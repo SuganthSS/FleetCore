@@ -14,4 +14,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-002A** | GitHub Actions CI Investigation & Repair | Completed | 2026-08-02 | `4d93a994f186853b338d75b5be63c07cfc45a1eb` |
 | **SPEC-002B** | ML Engine CI Repair | Completed | 2026-08-02 | `8d657e83874322a42ddc18a1885255743592d7ac` |
 | **SPEC-002C** | Fix ML Package Imports | Completed | 2026-08-02 | `6a76d3485520cf63c529f8d06f655b33d80f1a30` |
-| **SPEC-003** | Company Model | Completed | 2026-08-02 | `1ac70bd3ae6c4d5b90ffcdbb92e220f786d0a3d8` |
+| **SPEC-003** | Company Model | Completed | 2026-08-02 | `a612e18b8ba4b8075923244774e0871f38c065c3` |
+| **SPEC-004** | Role Model | Completed | 2026-08-02 | `6155deaed00e2be19b9e1fd9204823ae16db8721` |

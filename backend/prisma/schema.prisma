@@ -45,3 +45,24 @@ model Company {
   @@index([status])
   @@index([createdAt])
 }
+
+/// Represents system and custom Role-Based Access Control (RBAC) roles
+model Role {
+  /// Primary key UUID
+  id          String   @id @default(uuid())
+  /// Unique role name (e.g. Super Admin, Fleet Manager, Driver)
+  name        String   @unique
+  /// Description of permissions granted by this role
+  description String?
+  /// JSON structure defining granular RBAC permission policies
+  permissions Json
+  /// Flag indicating system-defined role that cannot be deleted
+  isSystem    Boolean  @default(false)
+  /// Creation timestamp
+  createdAt   DateTime @default(now())
+  /// Last modification timestamp
+  updatedAt   DateTime @updatedAt
+
+  @@index([isSystem])
+  @@index([createdAt])
+}

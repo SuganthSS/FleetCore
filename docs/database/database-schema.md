@@ -73,14 +73,55 @@ model Company {
 - `@@index([status])`: Filtering active/inactive companies.
 - `@@index([createdAt])`: Chronological indexing and reporting queries.
 
+---
+
+## 🔐 Role Model
+
+The `Role` model defines system-level and custom Role-Based Access Control (RBAC) roles across FleetCore.
+
+### Schema Definition
+
+```prisma
+/// Represents system and custom Role-Based Access Control (RBAC) roles
+model Role {
+  /// Primary key UUID
+  id          String   @id @default(uuid())
+  /// Unique role name (e.g. Super Admin, Fleet Manager, Driver)
+  name        String   @unique
+  /// Description of permissions granted by this role
+  description String?
+  /// JSON structure defining granular RBAC permission policies
+  permissions Json
+  /// Flag indicating system-defined role that cannot be deleted
+  isSystem    Boolean  @default(false)
+  /// Creation timestamp
+  createdAt   DateTime @default(now())
+  /// Last modification timestamp
+  updatedAt   DateTime @updatedAt
+
+  @@index([isSystem])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `name` | `String` | `@unique` | Unique role name identifier |
+| `description` | `String` | Optional | Detailed description of role scope |
+| `permissions` | `Json` | Required | Flexible JSON document containing RBAC policies |
+| `isSystem` | `Boolean` | `@default(false)` | System role protection flag |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Last modification timestamp |
+
+### Indexes
+
+- `@unique` on `name`: Guarantees unique role names across the system.
+- `@@index([isSystem])`: Fast filtering for system vs user-created custom roles.
+- `@@index([createdAt])`: Chronological sorting and audit queries.
+
 ### Relationships (Upcoming)
 
-The `Company` model acts as the root parent model for all tenant-scoped resources:
-- `users`: Array of `User` records belonging to this company.
-- `vehicles`: Array of `Vehicle` assets managed by this company.
-- `drivers`: Array of `Driver` profiles employed by this company.
-- `customers`: Array of `Customer` client records.
-- `shipments`: Array of `Shipment` dispatch orders.
-- `fuelRecords`: Array of `FuelRecord` logs.
-- `maintenanceRecords`: Array of `MaintenanceRecord` logs.
-- `notifications`: Array of `Notification` events.
+- `users`: One-to-many relationship mapping `Role` to assigned `User` accounts (`Role 1 -> N Users`).
