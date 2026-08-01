@@ -37,8 +37,9 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users   User[]
-  drivers Driver[]
+  users    User[]
+  drivers  Driver[]
+  vehicles Vehicle[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -295,8 +296,108 @@ model Driver {
 - `@@index([licenseExpiry])`: Automated license renewal alerts and compliance monitoring.
 - `@@index([createdAt])`: Driver onboarding analytics and chronological tracking.
 
+---
+
+## 🚛 Vehicle Model
+
+The `Vehicle` model represents a physical fleet asset owned by a `Company`.
+
+### Architectural Note: Driver Assignment via Trip
+
+> [!IMPORTANT]
+> **Why `driverId` is NOT on `Vehicle`**: In enterprise fleet management, a vehicle is a physical asset that is dynamically operated by different drivers over time depending on shifts, rotations, maintenance schedules, and dispatch assignments. Storing a static `driverId` directly on the `Vehicle` model would create data redundancy, invalid concurrency assumptions, and force historical overwrite issues. Instead, driver-to-vehicle assignments are modeled dynamically through temporal `Trip` records (`Trip -> Vehicle`, `Trip -> Driver`).
+
+### Schema Definition
+
+```prisma
+enum VehicleStatus {
+  AVAILABLE
+  ON_TRIP
+  MAINTENANCE
+  OUT_OF_SERVICE
+  DECOMMISSIONED
+}
+
+enum VehicleType {
+  TRUCK
+  VAN
+  TRAILER
+  BUS
+  CAR
+  SPECIALIZED
+}
+
+enum FuelType {
+  DIESEL
+  PETROL
+  ELECTRIC
+  HYBRID
+  CNG
+  LPG
+}
+
+/// --------------------------------------------
+/// Vehicle
+/// Represents a physical fleet asset.
+/// Belongs to a Company.
+/// Driver assignment is handled dynamically via Trip.
+/// --------------------------------------------
+model Vehicle {
+  id                 String        @id @default(uuid())
+  registrationNumber String        @unique
+  vin                String        @unique
+  make               String
+  model              String
+  manufacturingYear  Int
+  vehicleType        VehicleType   @default(TRUCK)
+  fuelType           FuelType      @default(DIESEL)
+  capacity           Float?
+  status             VehicleStatus @default(AVAILABLE)
+  companyId          String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([vehicleType])
+  @@index([fuelType])
+  @@index([status])
+  @@index([manufacturingYear])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `registrationNumber` | `String` | Required, `@unique` | Official vehicle license plate registration number |
+| `vin` | `String` | Required, `@unique` | Unique Vehicle Identification Number (VIN) |
+| `make` | `String` | Required | Vehicle manufacturer (e.g. Volvo, Scania, Ford) |
+| `model` | `String` | Required | Vehicle model series |
+| `manufacturingYear` | `Int` | Required | Manufacturing year (e.g. 2024) |
+| `vehicleType` | `VehicleType` | `@default(TRUCK)` | Asset classification (`TRUCK`, `VAN`, `TRAILER`, `BUS`, `CAR`, `SPECIALIZED`) |
+| `fuelType` | `FuelType` | `@default(DIESEL)` | Fuel / energy type (`DIESEL`, `PETROL`, `ELECTRIC`, `HYBRID`, `CNG`, `LPG`) |
+| `capacity` | `Float` | Optional | Cargo payload / passenger capacity |
+| `status` | `VehicleStatus` | `@default(AVAILABLE)` | Operational state (`AVAILABLE`, `ON_TRIP`, `MAINTENANCE`, `OUT_OF_SERVICE`, `DECOMMISSIONED`) |
+| `companyId` | `String` | Foreign Key | Parent company link to `Company.id` |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Modification timestamp |
+
+### Indexes
+
+- `@unique` on `registrationNumber`: Ensures unique license plates across the fleet system.
+- `@unique` on `vin`: Prevents duplicate vehicle identification numbers.
+- `@@index([companyId])`: Multi-tenant fleet filtering.
+- `@@index([vehicleType])`: Filtering fleet by asset type.
+- `@@index([fuelType])`: Fuel efficiency and emissions reporting queries.
+- `@@index([status])`: Operational dispatch filtering (e.g., retrieving `AVAILABLE` vehicles).
+- `@@index([manufacturingYear])`: Asset lifecycle & depreciation analytics.
+- `@@index([createdAt])`: Chronological asset registration tracking.
+
 ### Relationships
 
-- `user`: `Driver 1 <-> 1 User` (`onDelete: Cascade`)
-- `company`: `Driver N -> 1 Company` (`onDelete: Cascade`)
-- **Future Relations**: Prepared for `Vehicles`, `Trips`, `FuelRecords`, and `MaintenanceRecords`.
+- `company`: `Vehicle N -> 1 Company` (`onDelete: Cascade`)
+- **Future Relations**: Prepared for `Trips`, `FuelRecords`, `MaintenanceRecords`, `LocationHistory`, and `Shipments`.

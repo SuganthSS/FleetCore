@@ -43,6 +43,32 @@ enum ExperienceLevel {
   EXPERT
 }
 
+enum VehicleStatus {
+  AVAILABLE
+  ON_TRIP
+  MAINTENANCE
+  OUT_OF_SERVICE
+  DECOMMISSIONED
+}
+
+enum VehicleType {
+  TRUCK
+  VAN
+  TRAILER
+  BUS
+  CAR
+  SPECIALIZED
+}
+
+enum FuelType {
+  DIESEL
+  PETROL
+  ELECTRIC
+  HYBRID
+  CNG
+  LPG
+}
+
 model Company {
   id                 String        @id @default(uuid())
   name               String
@@ -62,8 +88,9 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users   User[]
-  drivers Driver[]
+  users    User[]
+  drivers  Driver[]
+  vehicles Vehicle[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -191,5 +218,50 @@ model Driver {
   @@index([availability])
   @@index([experienceLevel])
   @@index([licenseExpiry])
+  @@index([createdAt])
+}
+
+/// --------------------------------------------
+/// Vehicle
+/// Represents a physical fleet asset.
+/// Belongs to a Company.
+/// Driver assignment is handled dynamically via Trip.
+/// --------------------------------------------
+model Vehicle {
+  /// Primary key UUID
+  id                 String        @id @default(uuid())
+  /// Official vehicle license plate registration number
+  registrationNumber String        @unique
+  /// Unique Vehicle Identification Number (VIN)
+  vin                String        @unique
+  /// Vehicle manufacturer make (e.g., Volvo, Scania, Ford)
+  make               String
+  /// Vehicle model name or series
+  model              String
+  /// Vehicle manufacturing year
+  manufacturingYear  Int
+  /// Vehicle classification category
+  vehicleType        VehicleType   @default(TRUCK)
+  /// Fuel or energy source type
+  fuelType           FuelType      @default(DIESEL)
+  /// Cargo or passenger payload capacity (e.g. in kg or cubic meters)
+  capacity           Float?
+  /// Current operational asset status
+  status             VehicleStatus @default(AVAILABLE)
+  /// Foreign key referencing parent Company
+  companyId          String
+  /// Creation timestamp
+  createdAt          DateTime      @default(now())
+  /// Last modification timestamp
+  updatedAt          DateTime      @updatedAt
+
+  /// Parent Company relation
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([vehicleType])
+  @@index([fuelType])
+  @@index([status])
+  @@index([manufacturingYear])
   @@index([createdAt])
 }
