@@ -69,6 +69,13 @@ enum FuelType {
   LPG
 }
 
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
 model Company {
   id                 String        @id @default(uuid())
   name               String
@@ -88,9 +95,10 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users    User[]
-  drivers  Driver[]
-  vehicles Vehicle[]
+  users     User[]
+  drivers   Driver[]
+  vehicles  Vehicle[]
+  customers Customer[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -263,5 +271,52 @@ model Vehicle {
   @@index([fuelType])
   @@index([status])
   @@index([manufacturingYear])
+  @@index([createdAt])
+}
+
+/// --------------------------------------------
+/// Customer
+/// Represents a business or individual client.
+/// Customers request shipments and belong to a Company.
+/// --------------------------------------------
+model Customer {
+  /// Primary key UUID
+  id            String         @id @default(uuid())
+  /// Unique customer reference code
+  customerCode  String         @unique
+  /// Registered company or business name
+  companyName   String
+  /// Primary contact person name
+  contactPerson String?
+  /// Primary contact email address
+  email         String
+  /// Contact phone number
+  phone         String?
+  /// Physical street address
+  address       String?
+  /// City location
+  city          String?
+  /// State / Province
+  state         String?
+  /// Country location
+  country       String?
+  /// Postal / ZIP code
+  postalCode    String?
+  /// Account status
+  status        CustomerStatus @default(ACTIVE)
+  /// Foreign key referencing parent Company
+  companyId     String
+  /// Creation timestamp
+  createdAt     DateTime       @default(now())
+  /// Last modification timestamp
+  updatedAt     DateTime       @updatedAt
+
+  /// Parent Company relation
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([customerCode])
+  @@index([companyName])
+  @@index([status])
   @@index([createdAt])
 }

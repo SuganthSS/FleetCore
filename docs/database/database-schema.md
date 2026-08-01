@@ -37,9 +37,10 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users    User[]
-  drivers  Driver[]
-  vehicles Vehicle[]
+  users     User[]
+  drivers   Driver[]
+  vehicles  Vehicle[]
+  customers Customer[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -397,7 +398,84 @@ model Vehicle {
 - `@@index([manufacturingYear])`: Asset lifecycle & depreciation analytics.
 - `@@index([createdAt])`: Chronological asset registration tracking.
 
+---
+
+## 🏬 Customer Model
+
+The `Customer` model represents a business or individual client that requests shipments within FleetCore. Customers belong to a parent `Company`.
+
+### Schema Definition
+
+```prisma
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+/// --------------------------------------------
+/// Customer
+/// Represents a business or individual client.
+/// Customers request shipments and belong to a Company.
+/// --------------------------------------------
+model Customer {
+  id            String         @id @default(uuid())
+  customerCode  String         @unique
+  companyName   String
+  contactPerson String?
+  email         String
+  phone         String?
+  address       String?
+  city          String?
+  state         String?
+  country       String?
+  postalCode    String?
+  status        CustomerStatus @default(ACTIVE)
+  companyId     String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([customerCode])
+  @@index([companyName])
+  @@index([status])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `customerCode` | `String` | Required, `@unique` | Unique client reference code (e.g., `CUST-10024`) |
+| `companyName` | `String` | Required | Registered client company or individual business name |
+| `contactPerson` | `String` | Optional | Primary client contact representative name |
+| `email` | `String` | Required | Primary client contact email address |
+| `phone` | `String` | Optional | Primary client phone number |
+| `address` | `String` | Optional | Street address |
+| `city` | `String` | Optional | City location |
+| `state` | `String` | Optional | State / Province |
+| `country` | `String` | Optional | Country location |
+| `postalCode` | `String` | Optional | ZIP / Postal code |
+| `status` | `CustomerStatus` | `@default(ACTIVE)` | Account operational status (`ACTIVE`, `INACTIVE`, `SUSPENDED`, `PENDING_VERIFICATION`) |
+| `companyId` | `String` | Foreign Key | References parent `Company.id` |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Modification timestamp |
+
+### Indexes
+
+- `@unique` on `customerCode`: Ensures unique client reference codes across FleetCore.
+- `@@index([companyId])`: Multi-tenant filtering for company client listings.
+- `@@index([customerCode])`: Fast client code lookup during shipment creation.
+- `@@index([companyName])`: Search and lookup by client business name.
+- `@@index([status])`: Filtering active vs inactive customer accounts.
+- `@@index([createdAt])`: Chronological customer registration tracking.
+
 ### Relationships
 
-- `company`: `Vehicle N -> 1 Company` (`onDelete: Cascade`)
-- **Future Relations**: Prepared for `Trips`, `FuelRecords`, `MaintenanceRecords`, `LocationHistory`, and `Shipments`.
+- `company`: `Customer N -> 1 Company` (`onDelete: Cascade`)
+- **Future Relations**: Prepared for `Shipments`, `Invoices`, and `Notifications`.

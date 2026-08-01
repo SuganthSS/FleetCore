@@ -18,4 +18,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-004** | Role Model | Completed | 2026-08-02 | `15f110224c8f9c4676f4e2e354b3126911d1cafa` |
 | **SPEC-005** | User Model | Completed | 2026-08-02 | `b262c1a95d66588fbb972f135aecd47f601a59f4` |
 | **SPEC-006** | Driver Model | Completed | 2026-08-02 | `f11192ce5b63f9491d5b6b41a63db8c7a2138c5a` |
-| **SPEC-007** | Vehicle Core Model | Completed | 2026-08-02 | `149a4e470e098896da78b6e022eb9b860956d526` |
+| **SPEC-007** | Vehicle Core Model | Completed | 2026-08-02 | `f47202d0ace51519d692115cd2c1fe08757ba902` |
+| **SPEC-008** | Customer Model | Completed | 2026-08-02 | `b5a434dea1f673fa561eb14d870e8cbcaa1e520e` |
