@@ -13,4 +13,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-002** | Prisma Configuration & Database Connection | Completed | 2026-08-02 | `7f99555f8739d8d95def730bb199495217ac460c` |
 | **SPEC-002A** | GitHub Actions CI Investigation & Repair | Completed | 2026-08-02 | `4d93a994f186853b338d75b5be63c07cfc45a1eb` |
 | **SPEC-002B** | ML Engine CI Repair | Completed | 2026-08-02 | `8d657e83874322a42ddc18a1885255743592d7ac` |
-| **SPEC-002C** | Fix ML Package Imports | Completed | 2026-08-02 | `2d6ac53b8273db77a453664a0f89c1245ab902d0` |
+| **SPEC-002C** | Fix ML Package Imports | Completed | 2026-08-02 | `6a76d3485520cf63c529f8d06f655b33d80f1a30` |
+| **SPEC-003** | Company Model | Completed | 2026-08-02 | `1ac70bd3ae6c4d5b90ffcdbb92e220f786d0a3d8` |
