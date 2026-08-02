@@ -2,7 +2,7 @@
 
 **Module**: Fuel Management (`backend/src/modules/fuel`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation Layer Implemented  
+**Status**: Validation & Service Layers Implemented  
 
 ---
 
@@ -47,10 +47,40 @@ Validates query params for filtering, searching, sorting, and paginating fuel li
 
 ---
 
+## ⚙️ Fuel Service Layer (`services/fuel.service.ts`)
+
+The `FuelService` class manages vehicle refueling operational events, tenant isolation, and cross-entity vehicle/trip validation.
+
+### Business Rules & Tenant Isolation
+1. **`createFuelRecord(input: CreateFuelRecordInput)`**:
+   - Verifies existence of `Company` and `Vehicle`.
+   - **Tenant Scoping**: Verifies `Vehicle` belongs to `companyId`.
+   - **Trip Association Check**: If `tripId` is provided, verifies `Trip` exists, belongs to `companyId`, and matches `vehicleId` (`trip.vehicleId === vehicleId`).
+   - Rejects duplicate `receiptNumber` if provided within the same company.
+   - Includes `vehicle`, `trip`, and `company` relations in response.
+2. **`getFuelRecordById(id: string, companyId?: string)`**:
+   - Retrieves fuel record by UUID with full relations.
+   - Enforces multi-tenant isolation when `companyId` is provided (cross-tenant access returns Not Found).
+3. **`getFuelRecords(query: FuelRecordQueryInput, companyId?: string)`**:
+   - Supports paginated listing with `total`, `page`, `limit`, `totalPages` metadata.
+   - Enforces company isolation via `companyId`.
+   - Performs case-insensitive search across `fuelStation`, `receiptNumber`, and internal reference code.
+   - Supports filters: `vehicleId`, `tripId`, `companyId`.
+   - Supports sorting by: `createdAt`, `fuelDate` (`refueledAt`), `totalCost`, `odometerReading`.
+4. **`updateFuelRecord(id: string, input: UpdateFuelRecordInput, companyId?: string)`**:
+   - Verifies record exists within company tenant boundary.
+   - Rejects duplicate `receiptNumber` if modified.
+   - Re-verifies vehicle/trip company alignment and `trip.vehicleId` match if modified.
+5. **`deleteFuelRecord(id: string, companyId?: string)`**:
+   - Verifies record exists within company tenant boundary before hard deletion.
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  fuelService,
   createFuelRecordSchema,
   updateFuelRecordSchema,
   fuelRecordIdParamSchema,
@@ -59,5 +89,7 @@ import {
   UpdateFuelRecordInput,
   FuelRecordIdInput,
   FuelRecordQueryInput,
+  PaginatedFuelRecordResult,
 } from './modules/fuel';
 ```
+
