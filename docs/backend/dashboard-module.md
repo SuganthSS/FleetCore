@@ -2,7 +2,7 @@
 
 **Module**: Analytics & Overview (`backend/src/modules/dashboard`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Service Layer Implemented  
+**Status**: Service & Controller Layers Implemented  
 
 ---
 
@@ -76,11 +76,23 @@ export interface DashboardOverviewResult {
 
 ---
 
+## 🎮 Controller Layer (`controllers/dashboard.controller.ts`)
+
+The `DashboardController` layer validates optional query parameters, evaluates user role permissions to assign multi-tenant scope, and delegates execution to `DashboardService`.
+
+### Role-Aware Tenant Selection Rules
+- **Super Admin**: Allowed to query global system statistics (`companyId` omitted) or specify a specific company scope (`query.companyId`).
+- **All Other Roles**: Enforces `req.authenticatedUser.companyId` as the tenant filter, strictly ignoring any supplied `query.companyId`.
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  dashboardController,
   dashboardService,
   DashboardOverviewResult,
 } from './modules/dashboard';
 ```
+

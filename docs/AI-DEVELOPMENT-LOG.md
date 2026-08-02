@@ -91,4 +91,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-076** | Notification Controller Layer | Completed | 2026-08-02 | `6219152` |
 | **SPEC-077** | Notification Routes Layer | Completed | 2026-08-02 | `ad98e5b` |
 | **SPEC-078** | Notification Integration Testing & Production Hardening | Completed | 2026-08-02 | `c087cf6` |
-| **SPEC-079** | Dashboard Service Layer | Completed | 2026-08-02 | `3afff8675fd6c7c3fd929e68e1fb31a2256d480f` |
+| **SPEC-079** | Dashboard Service Layer | Completed | 2026-08-02 | `f5bf15f` |
+| **SPEC-080** | Dashboard Controller Layer | Completed | 2026-08-02 | `19c44b9e41b9e4956c536c320c4349b30d3acac0` |
