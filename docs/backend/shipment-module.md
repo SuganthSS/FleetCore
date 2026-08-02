@@ -2,7 +2,7 @@
 
 **Module**: Shipment Management (`backend/src/modules/shipment`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation Layer Implemented  
+**Status**: Validation & Service Layers Implemented  
 
 ---
 
@@ -60,10 +60,39 @@ Validates query params for filtering, searching, sorting, and paginating shipmen
 
 ---
 
+## ⚙️ Shipment Service Layer (`services/shipment.service.ts`)
+
+The `ShipmentService` class provides framework-independent CRUD operations with strict business rules.
+
+### Business Rules & Tenant Isolation
+1. **`createShipment(input: CreateShipmentInput)`**:
+   - Verifies existence of parent `Company`.
+   - Verifies existence of `Customer`.
+   - Enforces that the `Customer` belongs to the same `Company` (cross-company assignment rejected).
+   - Rejects globally duplicate `shipmentNumber`.
+   - Includes `customer` and `company` relations in response.
+2. **`getShipmentById(id: string, companyId?: string)`**:
+   - Retrieves shipment by UUID including `Customer` and `Company` relations.
+   - Enforces multi-tenant isolation when `companyId` is provided (cross-tenant access returns 404).
+3. **`getShipments(query: ShipmentQueryInput, companyId?: string)`**:
+   - Supports paginated listing with `total`, `page`, `limit`, `totalPages` metadata.
+   - Enforces company isolation via `companyId`.
+   - Performs case-insensitive search across `shipmentNumber`, `title`, `cargoType`, `pickupCity`, `deliveryCity`, and related `customer.companyName`.
+   - Supports filters: `status`, `priority`, `customerId`.
+4. **`updateShipment(id: string, input: UpdateShipmentInput, companyId?: string)`**:
+   - Verifies shipment exists within company tenant boundary.
+   - Rejects duplicate `shipmentNumber` if changed.
+   - If `customerId` changes, verifies new customer exists and belongs to the same company.
+5. **`deleteShipment(id: string, companyId?: string)`**:
+   - Verifies shipment exists within company tenant boundary before hard deletion.
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  shipmentService,
   createShipmentSchema,
   updateShipmentSchema,
   shipmentIdParamSchema,
@@ -72,5 +101,6 @@ import {
   UpdateShipmentInput,
   ShipmentIdInput,
   ShipmentQueryInput,
+  PaginatedShipmentResult,
 } from './modules/shipment';
 ```
