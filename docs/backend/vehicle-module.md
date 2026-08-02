@@ -2,7 +2,7 @@
 
 **Module**: Vehicle Management (`backend/src/modules/vehicle`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Service & Validation Layers Implemented  
+**Status**: Controller, Service & Validation Layers Implemented  
 
 ---
 
@@ -85,7 +85,57 @@ The `VehicleService` class provides framework-independent CRUD operations and bu
 
 ---
 
-## 🏷️ Exported TypeScript Types
+## 🎮 Vehicle Controller Layer (`controllers/vehicle.controller.ts`)
+
+The `VehicleController` provides thin Express request handlers that perform Zod input validation, delegate logic to `VehicleService`, and standardize HTTP responses.
+
+### Request Lifecycle
+```text
+HTTP Request ➔ Express Router ➔ Auth/RBAC Middleware ➔ VehicleController ➔ Zod Validation ➔ VehicleService ➔ Prisma Client ➔ Standardized HTTP Response
+```
+
+### Standardized Response Formats
+
+#### Success Response
+```json
+{
+  "success": true,
+  "message": "Vehicle created successfully",
+  "data": { ... }
+}
+```
+
+#### Validation Error (HTTP 400)
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    "Registration number is required",
+    "Invalid Company ID UUID format"
+  ]
+}
+```
+
+#### Resource Not Found (HTTP 404)
+```json
+{
+  "success": false,
+  "message": "Vehicle with ID '...' not found."
+}
+```
+
+#### Conflict Error (HTTP 409)
+```json
+{
+  "success": false,
+  "message": "Vehicle with registration number '...' already exists."
+}
+```
+
+---
+
+## 🏷️ Exported TypeScript Types & Instances
 
 ```typescript
 import {
@@ -95,5 +145,6 @@ import {
   VehicleQueryInput,
   PaginatedVehicleResult,
   vehicleService,
+  vehicleController,
 } from './modules/vehicle';
 ```
