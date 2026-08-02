@@ -6,7 +6,7 @@ This document describes the database schema, models, field definitions, indexes,
 
 ## 🏢 Company Model
 
-The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, Trips, FuelRecords, etc.) within FleetCore.
+The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, Trips, FuelRecords, MaintenanceRecords, etc.) within FleetCore.
 
 ### Schema Definition
 
@@ -37,14 +37,15 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users       User[]
-  drivers     Driver[]
-  vehicles    Vehicle[]
-  customers   Customer[]
-  shipments   Shipment[]
-  routes      Route[]
-  trips       Trip[]
-  fuelRecords FuelRecord[]
+  users              User[]
+  drivers            Driver[]
+  vehicles           Vehicle[]
+  customers          Customer[]
+  shipments          Shipment[]
+  routes             Route[]
+  trips              Trip[]
+  fuelRecords        FuelRecord[]
+  maintenanceRecords MaintenanceRecord[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -261,10 +262,11 @@ model Driver {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  trips       Trip[]
-  fuelRecords FuelRecord[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips              Trip[]
+  fuelRecords        FuelRecord[]
+  maintenanceRecords MaintenanceRecord[]
 
   @@index([companyId])
   @@index([availability])
@@ -364,9 +366,10 @@ model Vehicle {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  trips       Trip[]
-  fuelRecords FuelRecord[]
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips              Trip[]
+  fuelRecords        FuelRecord[]
+  maintenanceRecords MaintenanceRecord[]
 
   @@index([companyId])
   @@index([vehicleType])
@@ -917,3 +920,111 @@ model FuelRecord {
 - `vehicle`: `FuelRecord N -> 1 Vehicle` (`onDelete: Cascade`)
 - `driver`: `FuelRecord N -> 1 Driver` (`onDelete: Cascade`)
 - `trip`: `FuelRecord N -> 1 Trip` (`onDelete: Cascade`)
+
+---
+
+## 🔧 MaintenanceRecord Model
+
+The `MaintenanceRecord` model stores scheduled and completed vehicle maintenance events. It tracks maintenance type classifications, status progression, service providers, costs, odometer readings, and next service projections, linking back to `Company`, `Vehicle`, and `Driver`.
+
+### Schema Definition
+
+```prisma
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
+  INSPECTION
+  EMERGENCY
+  TIRE_SERVICE
+  OIL_CHANGE
+  BRAKE_SERVICE
+  OTHER
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  OVERDUE
+}
+
+/// --------------------------------------------
+/// MaintenanceRecord
+/// Represents a scheduled or completed vehicle maintenance event.
+/// Belongs to operational history.
+/// Links Company, Vehicle, and Driver.
+/// --------------------------------------------
+model MaintenanceRecord {
+  id                      String            @id @default(uuid())
+  maintenanceRecordNumber String            @unique
+  maintenanceType         MaintenanceType   @default(PREVENTIVE)
+  status                  MaintenanceStatus @default(SCHEDULED)
+  scheduledDate           DateTime
+  completedDate           DateTime?
+  serviceProvider         String?
+  description             String?
+  cost                    Float?
+  odometerReading         Float?
+  nextMaintenanceDate     DateTime?
+  notes            String?
+  companyId               String
+  vehicleId               String
+  driverId                String
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([maintenanceType])
+  @@index([status])
+  @@index([scheduledDate])
+  @@index([completedDate])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `maintenanceRecordNumber` | `String` | Required, `@unique` | Unique maintenance work order reference code |
+| `maintenanceType` | `MaintenanceType` | `@default(PREVENTIVE)` | Maintenance classification (`PREVENTIVE`, `CORRECTIVE`, `INSPECTION`, `EMERGENCY`, `TIRE_SERVICE`, `OIL_CHANGE`, `BRAKE_SERVICE`, `OTHER`) |
+| `status` | `MaintenanceStatus` | `@default(SCHEDULED)` | Work order status (`SCHEDULED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`, `OVERDUE`) |
+| `scheduledDate` | `DateTime` | Required | Planned maintenance date |
+| `completedDate` | `DateTime` | Optional | Actual completion date |
+| `serviceProvider` | `String` | Optional | Name of mechanic, shop, or vendor provider |
+| `description` | `String` | Optional | Description of work requested or performed |
+| `cost` | `Float` | Optional | Total service cost |
+| `odometerReading` | `Float` | Optional | Odometer reading at service time |
+| `nextMaintenanceDate` | `DateTime` | Optional | Projected next maintenance date |
+| `notes` | `String` | Optional | Operational notes or technical observations |
+| `companyId` | `String` | Foreign Key | References parent `Company.id` |
+| `vehicleId` | `String` | Foreign Key | References serviced `Vehicle.id` |
+| `driverId` | `String` | Foreign Key | References responsible `Driver.id` / technician |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Modification timestamp |
+
+### Indexes
+
+- `@unique` on `maintenanceRecordNumber`: Prevents duplicate work order numbers.
+- `@@index([companyId])`: Multi-tenant maintenance cost & record filtering.
+- `@@index([vehicleId])`: Vehicle maintenance history and reliability tracking.
+- `@@index([driverId])`: Responsible driver or technician maintenance reporting.
+- `@@index([maintenanceType])`: Service category analytics.
+- `@@index([status])`: Filtering active, scheduled, or overdue maintenance jobs.
+- `@@index([scheduledDate])`: Maintenance calendar scheduling queries.
+- `@@index([completedDate])`: Service completion timelines and reporting.
+- `@@index([createdAt])`: Chronological audit log indexing.
+
+### Relationships
+
+- `company`: `MaintenanceRecord N -> 1 Company` (`onDelete: Cascade`)
+- `vehicle`: `MaintenanceRecord N -> 1 Vehicle` (`onDelete: Cascade`)
+- `driver`: `MaintenanceRecord N -> 1 Driver` (`onDelete: Cascade`)

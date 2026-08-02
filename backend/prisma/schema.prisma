@@ -119,6 +119,25 @@ enum TripStatus {
   FAILED
 }
 
+enum MaintenanceType {
+  PREVENTIVE
+  CORRECTIVE
+  INSPECTION
+  EMERGENCY
+  TIRE_SERVICE
+  OIL_CHANGE
+  BRAKE_SERVICE
+  OTHER
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  OVERDUE
+}
+
 model Company {
   id                 String        @id @default(uuid())
   name               String
@@ -138,14 +157,15 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users       User[]
-  drivers     Driver[]
-  vehicles    Vehicle[]
-  customers   Customer[]
-  shipments   Shipment[]
-  routes      Route[]
-  trips       Trip[]
-  fuelRecords FuelRecord[]
+  users              User[]
+  drivers            Driver[]
+  vehicles           Vehicle[]
+  customers          Customer[]
+  shipments          Shipment[]
+  routes             Route[]
+  trips              Trip[]
+  fuelRecords        FuelRecord[]
+  maintenanceRecords MaintenanceRecord[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -265,11 +285,12 @@ model Driver {
   updatedAt             DateTime           @updatedAt
 
   /// Associated User account relation
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Parent Company relation
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  trips       Trip[]
-  fuelRecords FuelRecord[]
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips              Trip[]
+  fuelRecords        FuelRecord[]
+  maintenanceRecords MaintenanceRecord[]
 
   @@index([companyId])
   @@index([availability])
@@ -313,9 +334,10 @@ model Vehicle {
   updatedAt          DateTime      @updatedAt
 
   /// Parent Company relation
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  trips       Trip[]
-  fuelRecords FuelRecord[]
+  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips              Trip[]
+  fuelRecords        FuelRecord[]
+  maintenanceRecords MaintenanceRecord[]
 
   @@index([companyId])
   @@index([vehicleType])
@@ -630,5 +652,64 @@ model FuelRecord {
   @@index([tripId])
   @@index([fuelType])
   @@index([refueledAt])
+  @@index([createdAt])
+}
+
+/// --------------------------------------------
+/// MaintenanceRecord
+/// Represents a scheduled or completed vehicle maintenance event.
+/// Belongs to operational history.
+/// Links Company, Vehicle, and Driver.
+/// --------------------------------------------
+model MaintenanceRecord {
+  /// Primary key UUID
+  id                      String            @id @default(uuid())
+  /// Unique maintenance work order / service reference number
+  maintenanceRecordNumber String            @unique
+  /// Category of maintenance performed or planned
+  maintenanceType         MaintenanceType   @default(PREVENTIVE)
+  /// Execution status of the maintenance work order
+  status                  MaintenanceStatus @default(SCHEDULED)
+  /// Scheduled date for maintenance service
+  scheduledDate           DateTime
+  /// Actual completion date of maintenance service
+  completedDate           DateTime?
+  /// Name of service center, mechanic, or vendor provider
+  serviceProvider         String?
+  /// Detailed description of work requested or performed
+  description             String?
+  /// Total cost of maintenance service
+  cost                    Float?
+  /// Vehicle odometer reading at time of service
+  odometerReading         Float?
+  /// Projected date for next service interval
+  nextMaintenanceDate     DateTime?
+  /// Operational notes or technical findings
+  notes                   String?
+  /// Foreign key referencing parent Company
+  companyId               String
+  /// Foreign key referencing serviced Vehicle
+  vehicleId               String
+  /// Foreign key referencing responsible Driver or technician
+  driverId                String
+  /// Creation timestamp
+  createdAt               DateTime          @default(now())
+  /// Last modification timestamp
+  updatedAt               DateTime          @updatedAt
+
+  /// Parent Company relation
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  /// Serviced Vehicle relation
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  /// Responsible Driver / technician relation
+  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([maintenanceType])
+  @@index([status])
+  @@index([scheduledDate])
+  @@index([completedDate])
   @@index([createdAt])
 }
