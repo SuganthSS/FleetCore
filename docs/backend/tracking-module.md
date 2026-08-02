@@ -2,7 +2,7 @@
 
 **Module**: Tracking & Location History (`backend/src/modules/tracking`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation & Service Layers Implemented  
+**Status**: Validation, Service & Controller Layers Implemented  
 
 ---
 
@@ -81,10 +81,37 @@ The `TrackingService` class manages vehicle location breadcrumb entries (`Vehicl
 
 ---
 
+## 🎮 Tracking Controller Layer (`controllers/tracking.controller.ts`)
+
+The `TrackingController` layer processes HTTP requests, validates inputs using Zod, extracts authenticated tenant context (`companyId`), and maps service outputs/errors into standardized JSON responses.
+
+### HTTP Status Code Mapping
+
+| Status Code | Description | Scenario |
+| :--- | :--- | :--- |
+| **200 OK** | Success | Querying, updating, or deleting tracking location pings |
+| **201 Created** | Created | Successfully recording GPS location history breadcrumb |
+| **400 Bad Request** | Validation Error | Payload/Query/Params validation failure |
+| **404 Not Found** | Resource Not Found | Tracking/Vehicle/Trip/Driver/Company not found, cross-tenant access, or Trip-Vehicle/Driver mismatch |
+| **500 Error** | Internal Server Error | Unhandled server error |
+
+### Request Lifecycle
+
+```text
+HTTP Request
+  → Zod safeParse (params/query/body)
+  → Extract req.authenticatedUser.companyId
+  → trackingService method()
+  → Standardized JSON response
+```
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  trackingController,
   trackingService,
   createTrackingSchema,
   updateTrackingSchema,
@@ -97,4 +124,5 @@ import {
   PaginatedTrackingResult,
 } from './modules/tracking';
 ```
+
 
