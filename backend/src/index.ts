@@ -17,6 +17,7 @@ import { tripRoutes } from './modules/trip';
 import { fuelRoutes } from './modules/fuel';
 import { maintenanceRoutes } from './modules/maintenance';
 import { trackingRoutes } from './modules/tracking';
+import { notificationRoutes } from './modules/notification';
 import { initSocket } from './socket';
 
 const app: Application = express();
@@ -52,6 +53,7 @@ app.use('/api/v1/trips', tripRoutes);
 app.use('/api/v1/fuel', fuelRoutes);
 app.use('/api/v1/maintenance', maintenanceRoutes);
 app.use('/api/v1/tracking', trackingRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // Error Handling Middleware
 app.use(errorHandler);

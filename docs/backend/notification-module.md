@@ -2,7 +2,7 @@
 
 **Module**: Notifications (`backend/src/modules/notification`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation, Service & Controller Layers Implemented  
+**Status**: Fully Implemented (Validation, Service, Controller & Routes)  
 
 ---
 
@@ -104,10 +104,32 @@ HTTP Request
 
 ---
 
+## 🛣️ Routes & RBAC Matrix (`routes/notification.routes.ts`)
+
+Base Route: `/api/v1/notifications`
+
+### Middleware Execution Chain
+```text
+HTTP Request ➔ authenticate() ➔ authorize(...roles) ➔ NotificationController handler
+```
+
+### Endpoints Table & Allowed Roles
+
+| HTTP Method | Path | Description | Allowed Roles (`authorize`) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/notifications` | List notification history entries (Paginated, Filter, Sort) | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `GET` | `/api/v1/notifications/:id` | Retrieve single notification history entry by UUID | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `POST` | `/api/v1/notifications` | Create a new notification history entry | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `PUT` | `/api/v1/notifications/:id` | Update an existing notification history entry by UUID | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `DELETE` | `/api/v1/notifications/:id` | Delete a notification history entry by UUID | `Super Admin`, `Company Admin` |
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  notificationRoutes,
   notificationController,
   notificationService,
   createNotificationSchema,
