@@ -2,7 +2,7 @@
 
 **Module**: Maintenance Management (`backend/src/modules/maintenance`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation, Service & Controller Layers Implemented  
+**Status**: Fully Implemented (Validation, Service, Controller & Routes)  
 
 ---
 
@@ -106,10 +106,32 @@ HTTP Request
 
 ---
 
+## 🛣️ Routes & RBAC Matrix (`routes/maintenance.routes.ts`)
+
+Base Route: `/api/v1/maintenance`
+
+### Middleware Execution Chain
+```text
+HTTP Request ➔ authenticate() ➔ authorize(...roles) ➔ MaintenanceController handler
+```
+
+### Endpoints Table & Allowed Roles
+
+| HTTP Method | Path | Description | Allowed Roles (`authorize`) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/maintenance` | List maintenance work orders (Paginated, Search, Filter, Sort) | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `GET` | `/api/v1/maintenance/:id` | Retrieve single maintenance work order by UUID | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `POST` | `/api/v1/maintenance` | Create a new maintenance work order | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `PUT` | `/api/v1/maintenance/:id` | Update an existing maintenance work order by UUID | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `DELETE` | `/api/v1/maintenance/:id` | Delete a maintenance work order by UUID | `Super Admin`, `Company Admin` |
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  maintenanceRoutes,
   maintenanceController,
   maintenanceService,
   createMaintenanceSchema,
