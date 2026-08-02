@@ -2,7 +2,7 @@
 
 **Module**: Analytics & Overview (`backend/src/modules/dashboard`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Service & Controller Layers Implemented  
+**Status**: Fully Implemented (Service, Controller & Routes)  
 
 ---
 
@@ -86,10 +86,28 @@ The `DashboardController` layer validates optional query parameters, evaluates u
 
 ---
 
+## 🛣️ Routes & RBAC Matrix (`routes/dashboard.routes.ts`)
+
+Base Route: `/api/v1/dashboard`
+
+### Middleware Execution Chain
+```text
+HTTP Request ➔ authenticate() ➔ authorize(...roles) ➔ DashboardController handler
+```
+
+### Endpoints Table & Allowed Roles
+
+| HTTP Method | Path | Description | Allowed Roles (`authorize`) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/dashboard` | Aggregated real-time dashboard analytics overview | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  dashboardRoutes,
   dashboardController,
   dashboardService,
   DashboardOverviewResult,
