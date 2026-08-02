@@ -2,7 +2,7 @@
 
 **Module**: Trip Management (`backend/src/modules/trip`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation & Service Layers Implemented  
+**Status**: Validation, Service & Controller Layers Implemented  
 
 ---
 
@@ -78,10 +78,38 @@ The `TripService` class manages trip execution records, cross-entity tenant scop
 
 ---
 
+## 🎮 Trip Controller Layer (`controllers/trip.controller.ts`)
+
+The `TripController` layer handles HTTP requests, validates inputs via Zod, extracts authenticated tenant context, and maps service outputs/errors into standardized JSON responses.
+
+### HTTP Status Code Mapping
+
+| Status Code | Description | Scenario |
+| :--- | :--- | :--- |
+| **200 OK** | Success | Querying, updating, or deleting trips |
+| **201 Created** | Created | Successfully creating a trip |
+| **400 Bad Request** | Validation Error | Payload/Query/Params validation failure |
+| **404 Not Found** | Resource Not Found | Trip/Shipment/Vehicle/Driver/Route/Company not found, cross-tenant access |
+| **409 Conflict** | Duplicate Constraint | Duplicate `tripNumber` |
+| **500 Error** | Internal Server Error | Unhandled server error |
+
+### Request Lifecycle
+
+```text
+HTTP Request
+  → Zod safeParse (params/query/body)
+  → Extract req.authenticatedUser.companyId
+  → tripService method()
+  → Standardized JSON response
+```
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  tripController,
   tripService,
   createTripSchema,
   updateTripSchema,
@@ -94,4 +122,5 @@ import {
   PaginatedTripResult,
 } from './modules/trip';
 ```
+
 
