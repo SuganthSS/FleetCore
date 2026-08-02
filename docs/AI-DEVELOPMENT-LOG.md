@@ -39,4 +39,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-025** | Authentication Service | Completed | 2026-08-02 | `b6d23a33ae1b24635f47355466737369e813524f` |
 | **SPEC-026** | Authentication Controller | Completed | 2026-08-02 | `0fe1a1e56ad6d5b0e19c08bbb633f36bbe2ff5ee` |
 | **SPEC-027** | Authentication Routes | Completed | 2026-08-02 | `6c405adcd908f1d3fc9d4ea03aae6d1019d34211` |
-| **SPEC-027A** | Authentication Integration Testing | Completed | 2026-08-02 | `94bdf8bfbcce1001f4ccd2f0375fda64786b158f` |
+| **SPEC-027A** | Authentication Integration Testing | Completed | 2026-08-02 | `4a5450aea7ecd93b49490cfec9ba1cced766faf3` |
+| **SPEC-028** | Login Endpoint Verification & Hardening | Completed | 2026-08-02 | `a3ecf2ebc8e4e3f1b921cad856afbcf32f2339b3` |
