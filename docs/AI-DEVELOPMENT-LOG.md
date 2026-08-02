@@ -21,4 +21,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-007** | Vehicle Core Model | Completed | 2026-08-02 | `f47202d0ace51519d692115cd2c1fe08757ba902` |
 | **SPEC-008** | Customer Model | Completed | 2026-08-02 | `fa0fa59b46724a994433926dd53041c7e219e9d9` |
 | **SPEC-009** | Shipment Model | Completed | 2026-08-02 | `291f810ab3e68894dba5401319d0c929da8e6eff` |
-| **SPEC-010** | Route Model | Completed | 2026-08-02 | `78da91c84db1c4960289722af566d13bf35ade63` |
+| **SPEC-010** | Route Model | Completed | 2026-08-02 | `ea5bedf151b4344032ccc461d1aa050e041066ce` |
+| **SPEC-011** | Trip Model | Completed | 2026-08-02 | `35d36a521acb30757211b82ef2b4ec5c9b375342` |

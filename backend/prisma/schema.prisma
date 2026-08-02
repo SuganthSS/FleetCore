@@ -109,6 +109,16 @@ enum RouteStatus {
   CANCELLED
 }
 
+enum TripStatus {
+  SCHEDULED
+  DISPATCHED
+  IN_TRANSIT
+  PAUSED
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
 model Company {
   id                 String        @id @default(uuid())
   name               String
@@ -134,6 +144,7 @@ model Company {
   customers Customer[]
   shipments Shipment[]
   routes    Route[]
+  trips     Trip[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -256,6 +267,7 @@ model Driver {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Parent Company relation
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips   Trip[]
 
   @@index([companyId])
   @@index([availability])
@@ -300,6 +312,7 @@ model Vehicle {
 
   /// Parent Company relation
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips   Trip[]
 
   @@index([companyId])
   @@index([vehicleType])
@@ -422,6 +435,7 @@ model Shipment {
   /// Parent Company relation
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   routes   Route[]
+  trips    Trip[]
 
   @@index([companyId])
   @@index([customerId])
@@ -482,10 +496,75 @@ model Route {
   shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   /// Parent Company relation
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips    Trip[]
 
   @@index([companyId])
   @@index([shipmentId])
   @@index([status])
   @@index([routeType])
+  @@index([createdAt])
+}
+
+/// --------------------------------------------
+/// Trip
+/// Represents the operational execution of a planned Shipment.
+/// Links Driver, Vehicle, Shipment, Route, and Company.
+/// Route represents what was planned; Trip represents what actually occurred.
+/// --------------------------------------------
+model Trip {
+  /// Primary key UUID
+  id                 String     @id @default(uuid())
+  /// Unique operational trip identification number
+  tripNumber         String     @unique
+  /// Planned or scheduled trip start timestamp
+  scheduledStartTime DateTime?
+  /// Actual timestamp when trip dispatch started
+  actualStartTime    DateTime?
+  /// Planned or scheduled trip completion timestamp
+  scheduledEndTime   DateTime?
+  /// Actual timestamp when trip was completed
+  actualEndTime      DateTime?
+  /// Operational execution status of the trip
+  status             TripStatus @default(SCHEDULED)
+  /// Actual distance traveled during trip execution (e.g. in km)
+  actualDistance     Float?
+  /// Actual duration of trip execution (e.g. in minutes or hours)
+  actualDuration     Float?
+  /// Operational notes, remarks, or incident reports
+  remarks            String?
+  /// Foreign key referencing parent Company
+  companyId          String
+  /// Foreign key referencing assigned Driver
+  driverId           String
+  /// Foreign key referencing assigned Vehicle asset
+  vehicleId          String
+  /// Foreign key referencing executed Shipment request
+  shipmentId         String
+  /// Foreign key referencing planned Route
+  routeId            String
+  /// Creation timestamp
+  createdAt          DateTime   @default(now())
+  /// Last modification timestamp
+  updatedAt          DateTime   @updatedAt
+
+  /// Parent Company relation
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  /// Assigned Driver relation
+  driver   Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  /// Assigned Vehicle relation
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  /// Executed Shipment relation
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  /// Planned Route relation
+  route    Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([driverId])
+  @@index([vehicleId])
+  @@index([shipmentId])
+  @@index([routeId])
+  @@index([status])
+  @@index([scheduledStartTime])
+  @@index([actualStartTime])
   @@index([createdAt])
 }

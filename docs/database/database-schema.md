@@ -6,7 +6,7 @@ This document describes the database schema, models, field definitions, indexes,
 
 ## 🏢 Company Model
 
-The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, etc.) within FleetCore.
+The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, Trips, etc.) within FleetCore.
 
 ### Schema Definition
 
@@ -43,6 +43,7 @@ model Company {
   customers Customer[]
   shipments Shipment[]
   routes    Route[]
+  trips     Trip[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -261,6 +262,7 @@ model Driver {
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips   Trip[]
 
   @@index([companyId])
   @@index([availability])
@@ -361,6 +363,7 @@ model Vehicle {
   updatedAt          DateTime      @updatedAt
 
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips   Trip[]
 
   @@index([companyId])
   @@index([vehicleType])
@@ -540,6 +543,7 @@ model Shipment {
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   routes   Route[]
+  trips    Trip[]
 
   @@index([companyId])
   @@index([customerId])
@@ -599,7 +603,8 @@ model Shipment {
 
 - `customer`: `Shipment N -> 1 Customer` (`onDelete: Cascade`)
 - `company`: `Shipment N -> 1 Company` (`onDelete: Cascade`)
-- **Future Relations**: Prepared for `Route`, `Trip`, `Notifications`, and `Documents`.
+- `routes`: `Shipment 1 -> N Route`
+- `trips`: `Shipment 1 -> N Trip`
 
 ---
 
@@ -656,6 +661,7 @@ model Route {
 
   shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips    Trip[]
 
   @@index([companyId])
   @@index([shipmentId])
@@ -701,4 +707,117 @@ model Route {
 
 - `shipment`: `Route N -> 1 Shipment` (`onDelete: Cascade`)
 - `company`: `Route N -> 1 Company` (`onDelete: Cascade`)
-- **Future Relations**: Prepared for `Trip` and `Waypoints`.
+- `trips`: `Route 1 -> N Trip`
+
+---
+
+## 🚦 Trip Model
+
+The `Trip` model represents the operational **execution** of a planned shipment. It dynamically binds together five core platform entities: `Company`, `Driver`, `Vehicle`, `Shipment`, and `Route`.
+
+### Architectural Responsibility & Separation
+
+> [!IMPORTANT]
+> **Architectural Separation (Route vs Trip)**:
+> - **`Route` = Planning**: `Route` defines the static, planned path, estimated distance, and projected duration before dispatch occurs.
+> - **`Trip` = Execution**: `Trip` represents what actually occurred during real-world execution, tracking actual start/end timestamps, actual distance traveled, actual duration, driver performance, and operational remarks.
+
+### Schema Definition
+
+```prisma
+enum TripStatus {
+  SCHEDULED
+  DISPATCHED
+  IN_TRANSIT
+  PAUSED
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+/// --------------------------------------------
+/// Trip
+/// Represents the operational execution of a planned Shipment.
+/// Links Driver, Vehicle, Shipment, Route, and Company.
+/// Route represents what was planned; Trip represents what actually occurred.
+/// --------------------------------------------
+model Trip {
+  id                 String     @id @default(uuid())
+  tripNumber         String     @unique
+  scheduledStartTime DateTime?
+  actualStartTime    DateTime?
+  scheduledEndTime   DateTime?
+  actualEndTime      DateTime?
+  status             TripStatus @default(SCHEDULED)
+  actualDistance     Float?
+  actualDuration     Float?
+  remarks            String?
+  companyId          String
+  driverId           String
+  vehicleId          String
+  shipmentId         String
+  routeId            String
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  driver   Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  route    Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([driverId])
+  @@index([vehicleId])
+  @@index([shipmentId])
+  @@index([routeId])
+  @@index([status])
+  @@index([scheduledStartTime])
+  @@index([actualStartTime])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `tripNumber` | `String` | Required, `@unique` | Unique operational trip identification number |
+| `scheduledStartTime` | `DateTime` | Optional | Planned / scheduled dispatch start timestamp |
+| `actualStartTime` | `DateTime` | Optional | Actual timestamp when trip was dispatched |
+| `scheduledEndTime` | `DateTime` | Optional | Planned / scheduled trip completion timestamp |
+| `actualEndTime` | `DateTime` | Optional | Actual timestamp when trip reached destination |
+| `status` | `TripStatus` | `@default(SCHEDULED)` | Operational status (`SCHEDULED`, `DISPATCHED`, `IN_TRANSIT`, `PAUSED`, `COMPLETED`, `CANCELLED`, `FAILED`) |
+| `actualDistance` | `Float` | Optional | Total actual distance driven (e.g. km) |
+| `actualDuration` | `Float` | Optional | Total actual duration of execution (e.g. minutes/hours) |
+| `remarks` | `String` | Optional | Operational notes, driver remarks, or incident logs |
+| `companyId` | `String` | Foreign Key | References parent `Company.id` |
+| `driverId` | `String` | Foreign Key | References assigned `Driver.id` |
+| `vehicleId` | `String` | Foreign Key | References assigned `Vehicle.id` |
+| `shipmentId` | `String` | Foreign Key | References executed `Shipment.id` |
+| `routeId` | `String` | Foreign Key | References planned `Route.id` |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Modification timestamp |
+
+### Indexes
+
+- `@unique` on `tripNumber`: Guarantees unique trip dispatch numbers.
+- `@@index([companyId])`: Multi-tenant trip filtering.
+- `@@index([driverId])`: Driver trip history and duty performance queries.
+- `@@index([vehicleId])`: Vehicle utilization and operational history.
+- `@@index([shipmentId])`: Shipment dispatch tracking and fulfillment status.
+- `@@index([routeId])`: Route execution and plan vs actual comparison analytics.
+- `@@index([status])`: Filtering active, scheduled, or completed trips.
+- `@@index([scheduledStartTime])`: Dispatch calendar and schedule management queries.
+- `@@index([actualStartTime])`: Operational timeline analytics.
+- `@@index([createdAt])`: Chronological trip auditing.
+
+### Relationships
+
+- `company`: `Trip N -> 1 Company` (`onDelete: Cascade`)
+- `driver`: `Trip N -> 1 Driver` (`onDelete: Cascade`)
+- `vehicle`: `Trip N -> 1 Vehicle` (`onDelete: Cascade`)
+- `shipment`: `Trip N -> 1 Shipment` (`onDelete: Cascade`)
+- `route`: `Trip N -> 1 Route` (`onDelete: Cascade`)
+- **Future Relations**: Prepared for `LocationHistory`, `FuelRecords`, and `Notifications`.
