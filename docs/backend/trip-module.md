@@ -2,7 +2,7 @@
 
 **Module**: Trip Management (`backend/src/modules/trip`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation Layer Implemented  
+**Status**: Validation & Service Layers Implemented  
 
 ---
 
@@ -50,10 +50,39 @@ Validates query params for filtering, searching, sorting, and paginating trip li
 
 ---
 
+## ⚙️ Trip Service Layer (`services/trip.service.ts`)
+
+The `TripService` class manages trip execution records, cross-entity tenant scoping, and relation-rich data queries.
+
+### Business Rules & Tenant Isolation
+1. **`createTrip(input: CreateTripInput)`**:
+   - Verifies existence of `Company`, `Shipment`, `Vehicle`, `Driver`, and `Route`.
+   - **Cross-Tenant Alignment**: Verifies that `Shipment`, `Vehicle`, `Driver`, and `Route` all belong to the specified `companyId`. Rejects cross-company entity associations.
+   - Rejects duplicate `tripNumber`.
+   - Returns created trip with `shipment`, `vehicle`, `driver`, `route`, and `company` relations included.
+2. **`getTripById(id: string, companyId?: string)`**:
+   - Retrieves trip by UUID with full relations.
+   - Enforces multi-tenant isolation when `companyId` is provided (cross-tenant access returns Not Found).
+3. **`getTrips(query: TripQueryInput, companyId?: string)`**:
+   - Supports paginated listing with `total`, `page`, `limit`, `totalPages` metadata.
+   - Enforces company isolation via `companyId`.
+   - **Cross-Entity Search**: Performs case-insensitive search across `tripNumber`, `shipment.shipmentNumber`, `vehicle.registrationNumber`, `driver.employeeId`, and `route.routeCode`.
+   - Supports filters: `status`, `vehicleId`, `driverId`, `shipmentId`, `routeId`, `companyId`.
+   - Supports sorting by: `createdAt`, `tripNumber`, `plannedStartTime` (`scheduledStartTime`), `actualStartTime`.
+4. **`updateTrip(id: string, input: UpdateTripInput, companyId?: string)`**:
+   - Verifies trip exists within company tenant boundary.
+   - Rejects duplicate `tripNumber` if modified.
+   - Re-verifies tenant alignment if `shipmentId`, `vehicleId`, `driverId`, or `routeId` are updated.
+5. **`deleteTrip(id: string, companyId?: string)`**:
+   - Verifies trip exists within company tenant boundary before hard deletion.
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  tripService,
   createTripSchema,
   updateTripSchema,
   tripIdParamSchema,
@@ -62,5 +91,7 @@ import {
   UpdateTripInput,
   TripIdInput,
   TripQueryInput,
+  PaginatedTripResult,
 } from './modules/trip';
 ```
+
