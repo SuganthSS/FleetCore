@@ -12,6 +12,7 @@ import {
   Compass,
   Navigation,
   Bell,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -33,7 +34,9 @@ const navItems: NavItem[] = [
   { name: 'Fuel Logs', path: '/fuel', icon: Fuel },
   { name: 'GPS Tracking', path: '/tracking', icon: Navigation },
   { name: 'Notifications', path: '/notifications', icon: Bell },
+  { name: 'Analytics', path: '/analytics', icon: TrendingUp },
 ];
+
 
 
 
