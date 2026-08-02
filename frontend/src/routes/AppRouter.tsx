@@ -6,6 +6,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { VehiclesPage } from '@/pages/VehiclesPage';
+import { DriversPage } from '@/pages/DriversPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -47,10 +48,15 @@ const router = createBrowserRouter([
             path: '/vehicles',
             element: <VehiclesPage />,
           },
+          {
+            path: '/drivers',
+            element: <DriversPage />,
+          },
         ],
       },
     ],
   },
+
 
 
   /* ── 404 catch-all ── */

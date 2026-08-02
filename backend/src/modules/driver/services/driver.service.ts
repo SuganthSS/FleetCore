@@ -1,5 +1,6 @@
 import { Driver, Prisma } from '@prisma/client';
 import { prisma } from '../../../config/database';
+import { hashPassword } from '../../auth/utils/password.util';
 import {
   CreateDriverInput,
   UpdateDriverInput,
@@ -29,23 +30,68 @@ export class DriverService {
       throw new Error(`Company with ID '${input.companyId}' does not exist.`);
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: input.userId },
-    });
-    if (!user) {
-      throw new Error(`User with ID '${input.userId}' does not exist.`);
+    let finalUserId = input.userId;
+
+    if (!finalUserId) {
+      // Validate firstName, lastName, email
+      const { firstName, lastName, email, phone } = input;
+      if (!firstName || !lastName || !email) {
+        throw new Error('First name, last name, and email are required to create a new driver user.');
+      }
+
+      // Check email uniqueness
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+      if (existingUser) {
+        throw new Error(`User with email '${email}' already exists.`);
+      }
+
+      // Find 'Driver' Role
+      const driverRole = await prisma.role.findUnique({
+        where: { name: 'Driver' },
+      });
+      if (!driverRole) {
+        throw new Error("Default 'Driver' role not found in database. Please seed the database.");
+      }
+
+      // Create User
+      const passwordHash = await hashPassword('Driver@FleetCore2026!');
+      const newUser = await prisma.user.create({
+        data: {
+          firstName,
+          lastName,
+          email,
+          phone: phone || null,
+          passwordHash,
+          companyId: input.companyId,
+          roleId: driverRole.id,
+          status: 'ACTIVE',
+          emailVerified: true,
+        },
+      });
+
+      finalUserId = newUser.id;
+    } else {
+      const user = await prisma.user.findUnique({
+        where: { id: finalUserId },
+      });
+      if (!user) {
+        throw new Error(`User with ID '${finalUserId}' does not exist.`);
+      }
+
+      if (user.companyId !== input.companyId) {
+        throw new Error(`User '${finalUserId}' belongs to a different company.`);
+      }
+
+      const existingUserDriver = await prisma.driver.findUnique({
+        where: { userId: finalUserId },
+      });
+      if (existingUserDriver) {
+        throw new Error(`User '${finalUserId}' is already assigned to a driver profile.`);
+      }
     }
 
-    if (user.companyId !== input.companyId) {
-      throw new Error(`User '${input.userId}' belongs to a different company.`);
-    }
-
-    const existingUserDriver = await prisma.driver.findUnique({
-      where: { userId: input.userId },
-    });
-    if (existingUserDriver) {
-      throw new Error(`User '${input.userId}' is already assigned to a driver profile.`);
-    }
 
     const existingEmpId = await prisma.driver.findUnique({
       where: { employeeId: input.employeeId },
@@ -64,8 +110,9 @@ export class DriverService {
     const driver = await prisma.driver.create({
       data: {
         employeeId: input.employeeId,
-        userId: input.userId,
+        userId: finalUserId,
         companyId: input.companyId,
+
         experienceLevel: input.experienceLevel,
         availability: input.availability,
         licenseNumber: input.licenseNumber,
@@ -275,9 +322,38 @@ export class DriverService {
       }
     }
 
+    const { firstName, lastName, email, phone } = input;
+    if (
+      firstName !== undefined ||
+      lastName !== undefined ||
+      email !== undefined ||
+      phone !== undefined
+    ) {
+      const existingUserEmail = (existingDriver as { user?: { email: string } }).user?.email;
+      if (email && email !== existingUserEmail) {
+        const existingEmailUser = await prisma.user.findUnique({
+          where: { email },
+        });
+        if (existingEmailUser && existingEmailUser.id !== existingDriver.userId) {
+          throw new Error(`User with email '${email}' already exists.`);
+        }
+      }
+
+      await prisma.user.update({
+        where: { id: existingDriver.userId },
+        data: {
+          firstName: firstName !== undefined ? firstName : undefined,
+          lastName: lastName !== undefined ? lastName : undefined,
+          email: email !== undefined ? email : undefined,
+          phone: phone !== undefined ? phone : undefined,
+        },
+      });
+    }
+
     const updatedDriver = await prisma.driver.update({
       where: { id: existingDriver.id },
       data: {
+
         employeeId: input.employeeId,
         userId: input.userId,
         experienceLevel: input.experienceLevel,

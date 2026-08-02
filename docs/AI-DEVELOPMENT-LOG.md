@@ -99,6 +99,7 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-084** | FleetCore Authentication UI | Completed | 2026-08-02 | `80351ebf6d7d93f0289814620ae2e1b44d0a56c3` |
 | **SPEC-085** | Dashboard UI | Completed | 2026-08-02 | `5ffa476b72e1fc17af8aa6c6ade618e40d3bf12b` |
 | **SPEC-086** | Vehicles Management Page | Completed | 2026-08-02 | `0f45ac7e553e3e47185ccbfda692117460b58540` |
+| **SPEC-087** | Drivers Management Page | Completed | 2026-08-02 | `in-progress` |
 
 
 

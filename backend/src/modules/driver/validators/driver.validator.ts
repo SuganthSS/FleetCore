@@ -12,12 +12,39 @@ export const createDriverSchema = z.object({
     .max(50, { message: 'Employee ID must be 50 characters maximum' }),
 
   userId: z
-    .string({ required_error: 'User ID is required' })
-    .uuid({ message: 'Invalid User ID UUID format' }),
+    .string()
+    .uuid({ message: 'Invalid User ID UUID format' })
+    .optional(),
+
+  firstName: z
+    .string()
+    .trim()
+    .min(1, { message: 'First name is required' })
+    .optional(),
+
+  lastName: z
+    .string()
+    .trim()
+    .min(1, { message: 'Last name is required' })
+    .optional(),
+
+  email: z
+    .string()
+    .trim()
+    .email({ message: 'Invalid email address format' })
+    .optional(),
+
+  phone: z
+    .string()
+    .trim()
+    .max(30, { message: 'Phone must be 30 characters maximum' })
+    .optional()
+    .nullable(),
 
   companyId: z
     .string({ required_error: 'Company ID is required' })
     .uuid({ message: 'Invalid Company ID UUID format' }),
+
 
   experienceLevel: z
     .nativeEnum(ExperienceLevel, {
