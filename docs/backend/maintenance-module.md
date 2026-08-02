@@ -2,7 +2,7 @@
 
 **Module**: Maintenance Management (`backend/src/modules/maintenance`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation Layer Implemented  
+**Status**: Validation & Service Layers Implemented  
 
 ---
 
@@ -52,10 +52,39 @@ Validates query params for filtering, searching, sorting, and paginating mainten
 
 ---
 
+## ⚙️ Maintenance Service Layer (`services/maintenance.service.ts`)
+
+The `MaintenanceService` class manages vehicle maintenance work order lifecycle events, tenant isolation, and vehicle/driver entity scoping.
+
+### Business Rules & Tenant Isolation
+1. **`createMaintenance(input: CreateMaintenanceInput)`**:
+   - Verifies existence of `Company` and `Vehicle`.
+   - **Tenant Scoping**: Verifies `Vehicle` belongs to `companyId` (`vehicle.companyId === input.companyId`).
+   - **Driver Association Check**: If `driverId` is provided, verifies `Driver` exists and belongs to `companyId`.
+   - Auto-generates unique `MAINT-` work order reference.
+   - Includes `vehicle`, `driver`, and `company` relations in response.
+2. **`getMaintenanceById(id: string, companyId?: string)`**:
+   - Retrieves maintenance work order by UUID with full relations.
+   - Enforces multi-tenant isolation when `companyId` is provided (cross-tenant access returns Not Found).
+3. **`getMaintenances(query: MaintenanceQueryInput, companyId?: string)`**:
+   - Supports paginated listing with `total`, `page`, `limit`, `totalPages` metadata.
+   - Enforces company isolation via `companyId`.
+   - Performs case-insensitive search across `description`, `serviceProvider`, and work order reference code.
+   - Supports filters: `vehicleId`, `companyId`, `maintenanceType`, `status`.
+   - Supports sorting by: `createdAt`, `scheduledDate`, `completedDate`, `estimatedCost`, `actualCost`.
+4. **`updateMaintenance(id: string, input: UpdateMaintenanceInput, companyId?: string)`**:
+   - Verifies record exists within company tenant boundary.
+   - Re-verifies vehicle/driver company alignment if modified.
+5. **`deleteMaintenance(id: string, companyId?: string)`**:
+   - Verifies record exists within company tenant boundary before hard deletion.
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  maintenanceService,
   createMaintenanceSchema,
   updateMaintenanceSchema,
   maintenanceIdParamSchema,
@@ -64,5 +93,7 @@ import {
   UpdateMaintenanceInput,
   MaintenanceIdInput,
   MaintenanceQueryInput,
+  PaginatedMaintenanceResult,
 } from './modules/maintenance';
 ```
+
