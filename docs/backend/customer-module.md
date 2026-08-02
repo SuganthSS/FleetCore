@@ -2,7 +2,7 @@
 
 **Module**: Customer Management (`backend/src/modules/customer`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation, Service & Controller Layers Implemented  
+**Status**: Fully Implemented (Validation, Service, Controller & Routes)  
 
 ---
 
@@ -95,16 +95,26 @@ The `CustomerController` layer handles HTTP requests, validates inputs via Zod, 
 }
 ```
 
-#### HTTP Status Code Mapping
+---
 
-| Status Code | Description | Scenario |
-| :--- | :--- | :--- |
-| **200 OK** | Success | Querying, updating, or deleting customers |
-| **201 Created** | Created | Successfully creating a customer |
-| **400 Bad Request** | Validation Error | Payload/Query/Params validation failure |
-| **404 Not Found** | Resource Not Found | Customer/Company not found, or cross-tenant access |
-| **409 Conflict** | Duplicate Constraint | Duplicate customerCode or email within tenant |
-| **500 Error** | Internal Server Error | Unhandled server error |
+## 🛣️ Routes & RBAC Matrix (`routes/customer.routes.ts`)
+
+Base Route: `/api/v1/customers`
+
+### Middleware Execution Chain
+```text
+HTTP Request ➔ authenticate() ➔ authorize(...roles) ➔ CustomerController handler
+```
+
+### Endpoints Table & Allowed Roles
+
+| HTTP Method | Path | Description | Allowed Roles (`authorize`) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/customers` | List customers (Paginated, Search, Filter, Sort) | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `GET` | `/api/v1/customers/:id` | Retrieve single customer by UUID | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `POST` | `/api/v1/customers` | Create a new customer profile | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `PUT` | `/api/v1/customers/:id` | Update an existing customer by UUID | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `DELETE` | `/api/v1/customers/:id` | Delete a customer profile by UUID | `Super Admin`, `Company Admin` |
 
 ---
 
@@ -112,6 +122,7 @@ The `CustomerController` layer handles HTTP requests, validates inputs via Zod, 
 
 ```typescript
 import {
+  customerRoutes,
   customerController,
   customerService,
   createCustomerSchema,

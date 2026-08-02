@@ -10,6 +10,7 @@ import healthRoutes from './routes/health.routes';
 import { authRoutes } from './modules/auth';
 import { vehicleRoutes } from './modules/vehicle';
 import { driverRoutes } from './modules/driver';
+import { customerRoutes } from './modules/customer';
 import { initSocket } from './socket';
 
 const app: Application = express();
@@ -38,6 +39,7 @@ app.use('/api/v1', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/vehicles', vehicleRoutes);
 app.use('/api/v1/drivers', driverRoutes);
+app.use('/api/v1/customers', customerRoutes);
 
 // Error Handling Middleware
 app.use(errorHandler);
