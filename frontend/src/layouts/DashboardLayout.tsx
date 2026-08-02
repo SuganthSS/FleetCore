@@ -9,6 +9,7 @@ import {
   Wrench,
   Fuel,
   Building,
+  Compass,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -25,9 +26,11 @@ const navItems: NavItem[] = [
   { name: 'Customers', path: '/customers', icon: Building },
   { name: 'Trips', path: '/trips', icon: Map },
   { name: 'Shipments', path: '/shipments', icon: Package },
+  { name: 'Routes', path: '/routes', icon: Compass },
   { name: 'Maintenance', path: '/maintenance', icon: Wrench },
   { name: 'Fuel Logs', path: '/fuel', icon: Fuel },
 ];
+
 
 
 export const DashboardLayout: React.FC = () => {

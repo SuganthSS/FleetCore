@@ -9,6 +9,7 @@ import { VehiclesPage } from '@/pages/VehiclesPage';
 import { DriversPage } from '@/pages/DriversPage';
 import { CustomersPage } from '@/pages/CustomersPage';
 import { ShipmentsPage } from '@/pages/ShipmentsPage';
+import { RoutesPage } from '@/pages/RoutesPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -62,10 +63,15 @@ const router = createBrowserRouter([
             path: '/shipments',
             element: <ShipmentsPage />,
           },
+          {
+            path: '/routes',
+            element: <RoutesPage />,
+          },
         ],
       },
     ],
   },
+
 
 
 
