@@ -2,7 +2,21 @@
 
 **Module**: Vehicle Management (`backend/src/modules/vehicle`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Controller, Service & Validation Layers Implemented  
+**Status**: Complete Module Implemented (Routes, Controller, Service & Validation)  
+
+---
+
+## 🛣️ Vehicle REST API Endpoints (`/api/v1/vehicles`)
+
+All Vehicle endpoints require a valid Bearer JWT access token via `authenticate()` middleware.
+
+| HTTP Method | Endpoint Path | Description | Allowed Roles (`authorize`) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/vehicles` | List vehicles (Paginated, Search, Filter, Sort) | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `GET` | `/api/v1/vehicles/:id` | Get single vehicle details by UUID | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `POST` | `/api/v1/vehicles` | Register a new vehicle | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `PUT` | `/api/v1/vehicles/:id` | Update an existing vehicle by UUID | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `DELETE` | `/api/v1/vehicles/:id` | Delete a vehicle record by UUID | `Super Admin`, `Company Admin` |
 
 ---
 
@@ -50,39 +64,6 @@ Validates query params for filtering and paginating vehicle listings.
 
 The `VehicleService` class provides framework-independent CRUD operations and business rules.
 
-### Service Methods
-
-#### `createVehicle(input: CreateVehicleInput): Promise<Vehicle>`
-- **Business Rules**:
-  1. Verifies parent `Company` exists via `companyId`.
-  2. Ensures `registrationNumber` is unique across all vehicles.
-  3. Ensures `vin` is unique across all vehicles.
-- **Return**: Full created `Vehicle` Prisma record.
-
-#### `getVehicleById(id: string): Promise<Vehicle>`
-- **Business Rules**:
-  1. Fetches vehicle by UUID including basic company metadata.
-  2. Throws error if record is not found (`Vehicle with ID '...' not found.`).
-
-#### `getVehicles(query: VehicleQueryInput, companyId?: string): Promise<PaginatedVehicleResult>`
-- **Business Rules**:
-  1. Applies pagination (`page`, `limit`, `skip`).
-  2. Filters by `status`, `vehicleType`, `fuelType`, and `companyId` (for multi-tenant scoping).
-  3. Performs case-insensitive search across `registrationNumber`, `vin`, `make`, and `model`.
-  4. Returns structured metadata: `{ items, total, page, limit, totalPages }`.
-
-#### `updateVehicle(id: string, input: UpdateVehicleInput): Promise<Vehicle>`
-- **Business Rules**:
-  1. Ensures target vehicle exists.
-  2. If `registrationNumber` is changed, checks for duplicate registration.
-  3. If `vin` is changed, checks for duplicate VIN.
-- **Return**: Updated `Vehicle` record.
-
-#### `deleteVehicle(id: string): Promise<Vehicle>`
-- **Business Rules**:
-  1. Ensures target vehicle exists.
-  2. Executes physical delete in Prisma database.
-
 ---
 
 ## 🎮 Vehicle Controller Layer (`controllers/vehicle.controller.ts`)
@@ -91,7 +72,7 @@ The `VehicleController` provides thin Express request handlers that perform Zod 
 
 ### Request Lifecycle
 ```text
-HTTP Request ➔ Express Router ➔ Auth/RBAC Middleware ➔ VehicleController ➔ Zod Validation ➔ VehicleService ➔ Prisma Client ➔ Standardized HTTP Response
+HTTP Request ➔ Express Router (/api/v1/vehicles) ➔ Auth/RBAC Middleware ➔ VehicleController ➔ Zod Validation ➔ VehicleService ➔ Prisma Client ➔ Standardized HTTP Response
 ```
 
 ### Standardized Response Formats
@@ -117,34 +98,19 @@ HTTP Request ➔ Express Router ➔ Auth/RBAC Middleware ➔ VehicleController �
 }
 ```
 
-#### Resource Not Found (HTTP 404)
-```json
-{
-  "success": false,
-  "message": "Vehicle with ID '...' not found."
-}
-```
-
-#### Conflict Error (HTTP 409)
-```json
-{
-  "success": false,
-  "message": "Vehicle with registration number '...' already exists."
-}
-```
-
 ---
 
-## 🏷️ Exported TypeScript Types & Instances
+## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  vehicleRoutes,
+  vehicleController,
+  vehicleService,
   CreateVehicleInput,
   UpdateVehicleInput,
   VehicleIdInput,
   VehicleQueryInput,
   PaginatedVehicleResult,
-  vehicleService,
-  vehicleController,
 } from './modules/vehicle';
 ```
