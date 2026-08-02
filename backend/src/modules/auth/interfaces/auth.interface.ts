@@ -41,3 +41,12 @@ export interface LoginResponse {
   user: AuthenticatedUser;
   tokens: TokenPair;
 }
+
+declare global {
+  /* eslint-disable-next-line @typescript-eslint/no-namespace */
+  namespace Express {
+    interface Request {
+      authenticatedUser?: AuthenticatedUser;
+    }
+  }
+}
