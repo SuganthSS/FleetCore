@@ -14,6 +14,7 @@ import {
   Bell,
   TrendingUp,
   FileText,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -37,7 +38,9 @@ const navItems: NavItem[] = [
   { name: 'Notifications', path: '/notifications', icon: Bell },
   { name: 'Analytics', path: '/analytics', icon: TrendingUp },
   { name: 'Reports', path: '/reports', icon: FileText },
+  { name: 'Settings', path: '/settings', icon: Settings },
 ];
+
 
 
 
