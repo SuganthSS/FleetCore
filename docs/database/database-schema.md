@@ -6,7 +6,7 @@ This document describes the database schema, models, field definitions, indexes,
 
 ## 🏢 Company Model
 
-The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, Trips, FuelRecords, MaintenanceRecords, etc.) within FleetCore.
+The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, Trips, FuelRecords, MaintenanceRecords, LocationHistories, etc.) within FleetCore.
 
 ### Schema Definition
 
@@ -37,15 +37,16 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users              User[]
-  drivers            Driver[]
-  vehicles           Vehicle[]
-  customers          Customer[]
-  shipments          Shipment[]
-  routes             Route[]
-  trips              Trip[]
-  fuelRecords        FuelRecord[]
-  maintenanceRecords MaintenanceRecord[]
+  users                  User[]
+  drivers                Driver[]
+  vehicles               Vehicle[]
+  customers              Customer[]
+  shipments              Shipment[]
+  routes                 Route[]
+  trips                  Trip[]
+  fuelRecords            FuelRecord[]
+  maintenanceRecords     MaintenanceRecord[]
+  locationHistories      VehicleLocationHistory[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -262,11 +263,12 @@ model Driver {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
-  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user               User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company            Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   trips              Trip[]
   fuelRecords        FuelRecord[]
   maintenanceRecords MaintenanceRecord[]
+  locationHistories  VehicleLocationHistory[]
 
   @@index([companyId])
   @@index([availability])
@@ -366,10 +368,11 @@ model Vehicle {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company            Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   trips              Trip[]
   fuelRecords        FuelRecord[]
   maintenanceRecords MaintenanceRecord[]
+  locationHistories  VehicleLocationHistory[]
 
   @@index([companyId])
   @@index([vehicleType])
@@ -766,12 +769,13 @@ model Trip {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  driver      Driver       @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  shipment    Shipment     @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
-  route       Route        @relation(fields: [routeId], references: [id], onDelete: Cascade)
-  fuelRecords FuelRecord[]
+  company           Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  driver            Driver                   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle           Vehicle                  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  shipment          Shipment                 @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  route             Route                    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  fuelRecords       FuelRecord[]
+  locationHistories VehicleLocationHistory[]
 
   @@index([companyId])
   @@index([driverId])
@@ -828,6 +832,7 @@ model Trip {
 - `shipment`: `Trip N -> 1 Shipment` (`onDelete: Cascade`)
 - `route`: `Trip N -> 1 Route` (`onDelete: Cascade`)
 - `fuelRecords`: `Trip 1 -> N FuelRecord`
+- `locationHistories`: `Trip 1 -> N VehicleLocationHistory`
 
 ---
 
@@ -967,7 +972,7 @@ model MaintenanceRecord {
   cost                    Float?
   odometerReading         Float?
   nextMaintenanceDate     DateTime?
-  notes            String?
+  notes                   String?
   companyId               String
   vehicleId               String
   driverId                String
@@ -1028,3 +1033,84 @@ model MaintenanceRecord {
 - `company`: `MaintenanceRecord N -> 1 Company` (`onDelete: Cascade`)
 - `vehicle`: `MaintenanceRecord N -> 1 Vehicle` (`onDelete: Cascade`)
 - `driver`: `MaintenanceRecord N -> 1 Driver` (`onDelete: Cascade`)
+
+---
+
+## 📍 VehicleLocationHistory Model
+
+The `VehicleLocationHistory` model stores historical GPS location points generated during a `Trip`. It serves as an operational audit log for breadcrumb tracking, speed analysis, and route playback.
+
+### Architectural Responsibility & Purpose
+
+> [!IMPORTANT]
+> **Purpose**: `VehicleLocationHistory` stores historical GPS coordinates (`latitude`, `longitude`, `speed`, `heading`, `altitude`, `recordedAt`). It is a persistent operational data log. It is **NOT** responsible for real-time communication or live tracking logic, which will be implemented in future specifications via WebSockets and real-time streaming services.
+
+### Schema Definition
+
+```prisma
+/// --------------------------------------------
+/// VehicleLocationHistory
+/// Represents a historical GPS location point recorded during a Trip.
+/// Serves as an operational location log for breadcrumb tracking and route auditing.
+/// Does NOT provide real-time tracking logic (handled via WebSockets).
+/// --------------------------------------------
+model VehicleLocationHistory {
+  id         String   @id @default(uuid())
+  latitude   Float
+  longitude  Float
+  speed      Float?
+  heading    Float?
+  altitude   Float?
+  recordedAt DateTime
+  companyId  String
+  vehicleId  String
+  driverId   String
+  tripId     String
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  trip    Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([tripId])
+  @@index([recordedAt])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `latitude` | `Float` | Required | Latitude coordinate in decimal degrees (-90 to +90) |
+| `longitude` | `Float` | Required | Longitude coordinate in decimal degrees (-180 to +180) |
+| `speed` | `Float` | Optional | Vehicle speed at recording time (e.g. km/h or mph) |
+| `heading` | `Float` | Optional | Vehicle heading direction in degrees (0 to 360) |
+| `altitude` | `Float` | Optional | Elevation altitude in meters above sea level |
+| `recordedAt` | `DateTime` | Required | Timestamp when GPS point was captured by telemetry device |
+| `companyId` | `String` | Foreign Key | References parent `Company.id` |
+| `vehicleId` | `String` | Foreign Key | References tracked `Vehicle.id` |
+| `driverId` | `String` | Foreign Key | References active `Driver.id` |
+| `tripId` | `String` | Foreign Key | References executed `Trip.id` |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+
+### Indexes
+
+- `@@index([companyId])`: Multi-tenant location data filtering.
+- `@@index([vehicleId])`: Vehicle movement history & breadcrumb trail queries.
+- `@@index([driverId])`: Driver location history and speed compliance auditing.
+- `@@index([tripId])`: Trip playback and route execution path analysis.
+- `@@index([recordedAt])`: Time-series location queries and chronological ordering.
+- `@@index([createdAt])`: Database insertion auditing.
+
+### Relationships
+
+- `company`: `VehicleLocationHistory N -> 1 Company` (`onDelete: Cascade`)
+- `vehicle`: `VehicleLocationHistory N -> 1 Vehicle` (`onDelete: Cascade`)
+- `driver`: `VehicleLocationHistory N -> 1 Driver` (`onDelete: Cascade`)
+- `trip`: `VehicleLocationHistory N -> 1 Trip` (`onDelete: Cascade`)

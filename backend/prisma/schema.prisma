@@ -166,6 +166,7 @@ model Company {
   trips              Trip[]
   fuelRecords        FuelRecord[]
   maintenanceRecords MaintenanceRecord[]
+  locationHistories  VehicleLocationHistory[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -285,12 +286,13 @@ model Driver {
   updatedAt             DateTime           @updatedAt
 
   /// Associated User account relation
-  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Parent Company relation
-  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company            Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   trips              Trip[]
   fuelRecords        FuelRecord[]
   maintenanceRecords MaintenanceRecord[]
+  locationHistories  VehicleLocationHistory[]
 
   @@index([companyId])
   @@index([availability])
@@ -334,10 +336,11 @@ model Vehicle {
   updatedAt          DateTime      @updatedAt
 
   /// Parent Company relation
-  company            Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company            Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   trips              Trip[]
   fuelRecords        FuelRecord[]
   maintenanceRecords MaintenanceRecord[]
+  locationHistories  VehicleLocationHistory[]
 
   @@index([companyId])
   @@index([vehicleType])
@@ -573,16 +576,17 @@ model Trip {
   updatedAt          DateTime   @updatedAt
 
   /// Parent Company relation
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company           Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   /// Assigned Driver relation
-  driver      Driver       @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  driver            Driver                   @relation(fields: [driverId], references: [id], onDelete: Cascade)
   /// Assigned Vehicle relation
-  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicle           Vehicle                  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   /// Executed Shipment relation
-  shipment    Shipment     @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  shipment          Shipment                 @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   /// Planned Route relation
-  route       Route        @relation(fields: [routeId], references: [id], onDelete: Cascade)
-  fuelRecords FuelRecord[]
+  route             Route                    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  fuelRecords       FuelRecord[]
+  locationHistories VehicleLocationHistory[]
 
   @@index([companyId])
   @@index([driverId])
@@ -711,5 +715,54 @@ model MaintenanceRecord {
   @@index([status])
   @@index([scheduledDate])
   @@index([completedDate])
+  @@index([createdAt])
+}
+
+/// --------------------------------------------
+/// VehicleLocationHistory
+/// Represents a historical GPS location point recorded during a Trip.
+/// Serves as an operational location log for breadcrumb tracking and route auditing.
+/// Does NOT provide real-time tracking logic (handled via WebSockets).
+/// --------------------------------------------
+model VehicleLocationHistory {
+  /// Primary key UUID
+  id         String   @id @default(uuid())
+  /// Latitude coordinate in decimal degrees (-90 to +90)
+  latitude   Float
+  /// Longitude coordinate in decimal degrees (-180 to +180)
+  longitude  Float
+  /// Speed of the vehicle at recording time (e.g. km/h or mph)
+  speed      Float?
+  /// Vehicle heading direction in degrees (0 to 360)
+  heading    Float?
+  /// Altitude elevation in meters above sea level
+  altitude   Float?
+  /// Date and time when the GPS location point was recorded by device
+  recordedAt DateTime
+  /// Foreign key referencing parent Company
+  companyId  String
+  /// Foreign key referencing tracked Vehicle asset
+  vehicleId  String
+  /// Foreign key referencing active Driver
+  driverId   String
+  /// Foreign key referencing active Trip execution
+  tripId     String
+  /// Creation timestamp
+  createdAt  DateTime @default(now())
+
+  /// Parent Company relation
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  /// Tracked Vehicle relation
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  /// Active Driver relation
+  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  /// Active Trip relation
+  trip    Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([tripId])
+  @@index([recordedAt])
   @@index([createdAt])
 }
