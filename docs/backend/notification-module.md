@@ -2,7 +2,7 @@
 
 **Module**: Notifications (`backend/src/modules/notification`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation Layer Implemented  
+**Status**: Validation & Service Layers Implemented  
 
 ---
 
@@ -51,10 +51,38 @@ Validates query params for filtering, searching, sorting, and paginating notific
 
 ---
 
+## ⚙️ Notification Service Layer (`services/notification.service.ts`)
+
+The `NotificationService` class manages system notifications, user delivery history, tenant isolation, and read status synchronization.
+
+### Business Rules & Tenant Isolation
+1. **`createNotification(input: CreateNotificationInput)`**:
+   - Verifies existence of `Company` and `User`.
+   - **Tenant Scoping**: Verifies `User.companyId === input.companyId`.
+   - Includes `user` and `company` relations in response.
+2. **`getNotificationById(id: string, companyId?: string)`**:
+   - Retrieves notification record by UUID with full relations.
+   - Enforces multi-tenant isolation when `companyId` is provided (cross-tenant access returns Not Found).
+3. **`getNotifications(query: NotificationQueryInput, companyId?: string)`**:
+   - Supports paginated listing with `total`, `page`, `limit`, `totalPages` metadata.
+   - Enforces company isolation via `companyId`.
+   - Performs case-insensitive search across `title` and `message`.
+   - Supports filters: `userId`, `companyId`, `type`, `priority`, `isRead`.
+   - Supports sorting by: `createdAt`, `readAt`, `priority`.
+4. **`updateNotification(id: string, input: UpdateNotificationInput, companyId?: string)`**:
+   - Verifies record exists within company tenant boundary.
+   - Re-verifies user company alignment if `userId` is modified.
+   - Synchronizes `isRead` and `readAt` timestamps automatically.
+5. **`deleteNotification(id: string, companyId?: string)`**:
+   - Verifies record exists within company tenant boundary before hard deletion.
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  notificationService,
   createNotificationSchema,
   updateNotificationSchema,
   notificationIdParamSchema,
@@ -63,5 +91,7 @@ import {
   UpdateNotificationInput,
   NotificationIdInput,
   NotificationQueryInput,
+  PaginatedNotificationResult,
 } from './modules/notification';
 ```
+
