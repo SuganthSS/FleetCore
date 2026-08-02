@@ -124,6 +124,11 @@ export const customerQuerySchema = z.object({
     })
     .optional(),
 
+  companyId: z
+    .string()
+    .uuid({ message: 'Invalid Company ID UUID format' })
+    .optional(),
+
   sortBy: z
     .enum(['createdAt', 'companyName', 'customerCode'])
     .optional()

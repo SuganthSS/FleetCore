@@ -2,7 +2,7 @@
 
 **Module**: Customer Management (`backend/src/modules/customer`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation Layer Implemented  
+**Status**: Validation & Service Layers Implemented  
 
 ---
 
@@ -46,10 +46,36 @@ Validates query params for filtering, searching, sorting, and paginating custome
 
 ---
 
+## ⚙️ Customer Service Layer (`services/customer.service.ts`)
+
+The `CustomerService` class provides framework-independent CRUD operations and business rules.
+
+### Business Rules & Tenant Isolation
+1. **`createCustomer(input: CreateCustomerInput)`**:
+   - Validates existence of parent `Company`.
+   - Rejects duplicate `customerCode` globally.
+   - Rejects duplicate `email` within the same company tenant.
+   - Includes company relation in response.
+2. **`getCustomerById(id: string, companyId?: string)`**:
+   - Retrieves customer record by UUID, including associated `Company` metadata.
+   - Enforces multi-tenant isolation by scoping queries with `companyId`.
+3. **`getCustomers(query: CustomerQueryInput, companyId?: string)`**:
+   - Supports paginated listing with total counts and total pages.
+   - Enforces company isolation via `companyId`.
+   - Performs case-insensitive search across `customerCode`, `companyName`, `contactPerson`, and `email`.
+4. **`updateCustomer(id: string, input: UpdateCustomerInput, companyId?: string)`**:
+   - Verifies customer exists and enforces multi-tenant boundary.
+   - Checks uniqueness of updated `customerCode` and updated `email` within tenant.
+5. **`deleteCustomer(id: string, companyId?: string)`**:
+   - Verifies customer exists within company tenant boundary before hard deletion.
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  customerService,
   createCustomerSchema,
   updateCustomerSchema,
   customerIdParamSchema,
@@ -58,5 +84,6 @@ import {
   UpdateCustomerInput,
   CustomerIdInput,
   CustomerQueryInput,
+  PaginatedCustomerResult,
 } from './modules/customer';
 ```
