@@ -2,7 +2,7 @@
 
 **Module**: Notifications (`backend/src/modules/notification`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation & Service Layers Implemented  
+**Status**: Validation, Service & Controller Layers Implemented  
 
 ---
 
@@ -78,10 +78,37 @@ The `NotificationService` class manages system notifications, user delivery hist
 
 ---
 
+## 🎮 Notification Controller Layer (`controllers/notification.controller.ts`)
+
+The `NotificationController` layer processes HTTP requests, validates inputs using Zod, extracts authenticated tenant context (`companyId`), and maps service outputs/errors into standardized JSON responses.
+
+### HTTP Status Code Mapping
+
+| Status Code | Description | Scenario |
+| :--- | :--- | :--- |
+| **200 OK** | Success | Querying, updating, or deleting notification history entries |
+| **201 Created** | Created | Successfully creating a notification history entry |
+| **400 Bad Request** | Validation Error | Payload/Query/Params validation failure |
+| **404 Not Found** | Resource Not Found | Notification/User/Company not found, or cross-tenant access attempt |
+| **500 Error** | Internal Server Error | Unhandled server error |
+
+### Request Lifecycle
+
+```text
+HTTP Request
+  → Zod safeParse (params/query/body)
+  → Extract req.authenticatedUser.companyId
+  → notificationService method()
+  → Standardized JSON response
+```
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  notificationController,
   notificationService,
   createNotificationSchema,
   updateNotificationSchema,
@@ -94,4 +121,5 @@ import {
   PaginatedNotificationResult,
 } from './modules/notification';
 ```
+
 
