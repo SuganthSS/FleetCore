@@ -5,3 +5,5 @@ export * from './PageHeader';
 export * from './EmptyState';
 export * from './ErrorState';
 export * from './ConfirmDialog';
+export * from './Input';
+
