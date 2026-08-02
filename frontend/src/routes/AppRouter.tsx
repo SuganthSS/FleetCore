@@ -14,7 +14,9 @@ import { TripsPage } from '@/pages/TripsPage';
 import { FuelPage } from '@/pages/FuelPage';
 import { MaintenancePage } from '@/pages/MaintenancePage';
 import { TrackingPage } from '@/pages/TrackingPage';
+import { NotificationsPage } from '@/pages/NotificationsPage';
 import { LoginPage } from '@/pages/LoginPage';
+
 
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -91,8 +93,13 @@ const router = createBrowserRouter([
             path: '/tracking',
             element: <TrackingPage />,
           },
+          {
+            path: '/notifications',
+            element: <NotificationsPage />,
+          },
         ],
       },
+
 
 
 

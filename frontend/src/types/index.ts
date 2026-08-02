@@ -10,4 +10,6 @@ export * from './trip';
 export * from './fuel';
 export * from './maintenance';
 export * from './tracking';
+export * from './notification';
+
 

@@ -11,6 +11,7 @@ import {
   Building,
   Compass,
   Navigation,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -31,7 +32,9 @@ const navItems: NavItem[] = [
   { name: 'Maintenance', path: '/maintenance', icon: Wrench },
   { name: 'Fuel Logs', path: '/fuel', icon: Fuel },
   { name: 'GPS Tracking', path: '/tracking', icon: Navigation },
+  { name: 'Notifications', path: '/notifications', icon: Bell },
 ];
+
 
 
 
