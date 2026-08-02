@@ -11,6 +11,7 @@ import { authRoutes } from './modules/auth';
 import { vehicleRoutes } from './modules/vehicle';
 import { driverRoutes } from './modules/driver';
 import { customerRoutes } from './modules/customer';
+import { shipmentRoutes } from './modules/shipment';
 import { initSocket } from './socket';
 
 const app: Application = express();
@@ -40,6 +41,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/vehicles', vehicleRoutes);
 app.use('/api/v1/drivers', driverRoutes);
 app.use('/api/v1/customers', customerRoutes);
+app.use('/api/v1/shipments', shipmentRoutes);
 
 // Error Handling Middleware
 app.use(errorHandler);

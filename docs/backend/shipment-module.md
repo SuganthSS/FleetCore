@@ -2,7 +2,7 @@
 
 **Module**: Shipment Management (`backend/src/modules/shipment`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation, Service & Controller Layers Implemented  
+**Status**: Fully Implemented (Validation, Service, Controller & Routes)  
 
 ---
 
@@ -115,10 +115,32 @@ HTTP Request
 
 ---
 
+## 🛣️ Routes & RBAC Matrix (`routes/shipment.routes.ts`)
+
+Base Route: `/api/v1/shipments`
+
+### Middleware Execution Chain
+```text
+HTTP Request ➔ authenticate() ➔ authorize(...roles) ➔ ShipmentController handler
+```
+
+### Endpoints Table & Allowed Roles
+
+| HTTP Method | Path | Description | Allowed Roles (`authorize`) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/shipments` | List shipments (Paginated, Search, Filter, Sort) | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `GET` | `/api/v1/shipments/:id` | Retrieve single shipment by UUID | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `POST` | `/api/v1/shipments` | Create a new shipment order | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `PUT` | `/api/v1/shipments/:id` | Update an existing shipment by UUID | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `DELETE` | `/api/v1/shipments/:id` | Delete a shipment order by UUID | `Super Admin`, `Company Admin` |
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  shipmentRoutes,
   shipmentController,
   shipmentService,
   createShipmentSchema,
