@@ -6,3 +6,4 @@ export * from './driver';
 export * from './customer';
 export * from './shipment';
 export * from './route';
+export * from './trip';

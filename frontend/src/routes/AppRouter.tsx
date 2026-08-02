@@ -10,10 +10,12 @@ import { DriversPage } from '@/pages/DriversPage';
 import { CustomersPage } from '@/pages/CustomersPage';
 import { ShipmentsPage } from '@/pages/ShipmentsPage';
 import { RoutesPage } from '@/pages/RoutesPage';
+import { TripsPage } from '@/pages/TripsPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 const router = createBrowserRouter([
+
   /* ── Root redirect ── */
   {
     path: '/',
@@ -67,8 +69,13 @@ const router = createBrowserRouter([
             path: '/routes',
             element: <RoutesPage />,
           },
+          {
+            path: '/trips',
+            element: <TripsPage />,
+          },
         ],
       },
+
     ],
   },
 
