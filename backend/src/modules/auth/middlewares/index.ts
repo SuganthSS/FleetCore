@@ -1,2 +1,1 @@
-// Middlewares directory placeholder export
-export {};
+export * from './auth.middleware';
