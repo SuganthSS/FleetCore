@@ -2,7 +2,7 @@
 
 **Module**: Route Management (`backend/src/modules/route`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation Layer Implemented  
+**Status**: Validation & Service Layers Implemented  
 
 ---
 
@@ -46,10 +46,37 @@ Validates query params for filtering, searching, sorting, and paginating route l
 
 ---
 
+## ⚙️ Route Service Layer (`services/route.service.ts`)
+
+The `RouteService` class provides framework-independent CRUD operations with strict business rules.
+
+### Business Rules & Tenant Isolation
+1. **`createRoute(input: CreateRouteInput)`**:
+   - Verifies existence of parent `Company`.
+   - Rejects duplicate `routeCode`.
+   - Includes `company` relation in response.
+2. **`getRouteById(id: string, companyId?: string)`**:
+   - Retrieves route by UUID including `Company` relation.
+   - Enforces multi-tenant isolation when `companyId` is provided (cross-tenant access returns 404/not found).
+3. **`getRoutes(query: RouteQueryInput, companyId?: string)`**:
+   - Supports paginated listing with `total`, `page`, `limit`, `totalPages` metadata.
+   - Enforces company isolation via `companyId`.
+   - Performs case-insensitive search across `routeCode`, `name`, `origin`, and `destination`.
+   - Supports filters: `routeType`, `status`, `companyId`.
+   - Supports sorting by: `createdAt`, `routeCode`, `name`, `distance`.
+4. **`updateRoute(id: string, input: UpdateRouteInput, companyId?: string)`**:
+   - Verifies route exists within company tenant boundary.
+   - Rejects duplicate `routeCode` if changed.
+5. **`deleteRoute(id: string, companyId?: string)`**:
+   - Verifies route exists within company tenant boundary before hard deletion.
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  routeService,
   createRouteSchema,
   updateRouteSchema,
   routeIdParamSchema,
@@ -58,5 +85,7 @@ import {
   UpdateRouteInput,
   RouteIdInput,
   RouteQueryInput,
+  PaginatedRouteResult,
 } from './modules/route';
 ```
+
