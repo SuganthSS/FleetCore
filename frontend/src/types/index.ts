@@ -3,3 +3,5 @@ export * from './auth';
 export * from './dashboard';
 export * from './vehicle';
 export * from './driver';
+export * from './customer';
+

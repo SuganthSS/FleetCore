@@ -7,6 +7,7 @@ import { PublicRoute } from './PublicRoute';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { VehiclesPage } from '@/pages/VehiclesPage';
 import { DriversPage } from '@/pages/DriversPage';
+import { CustomersPage } from '@/pages/CustomersPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -52,10 +53,15 @@ const router = createBrowserRouter([
             path: '/drivers',
             element: <DriversPage />,
           },
+          {
+            path: '/customers',
+            element: <CustomersPage />,
+          },
         ],
       },
     ],
   },
+
 
 
 

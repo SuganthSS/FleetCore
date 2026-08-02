@@ -72,6 +72,9 @@ export class CustomerService {
             name: true,
           },
         },
+        _count: {
+          select: { shipments: true },
+        },
       },
     });
 
@@ -99,6 +102,9 @@ export class CustomerService {
             id: true,
             name: true,
           },
+        },
+        _count: {
+          select: { shipments: true },
         },
       },
     });
@@ -163,6 +169,9 @@ export class CustomerService {
               id: true,
               name: true,
             },
+          },
+          _count: {
+            select: { shipments: true },
           },
         },
       }),
@@ -242,6 +251,9 @@ export class CustomerService {
             id: true,
             name: true,
           },
+        },
+        _count: {
+          select: { shipments: true },
         },
       },
     });
