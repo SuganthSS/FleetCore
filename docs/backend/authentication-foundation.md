@@ -1,16 +1,16 @@
 # FleetCore Authentication Foundation Architecture
 
-**SPEC ID**: SPEC-019, SPEC-020, SPEC-021, SPEC-022, SPEC-023, SPEC-024  
-**Phase**: Phase 5 - Backend Foundation  
+**SPEC ID**: SPEC-019, SPEC-020, SPEC-021, SPEC-022, SPEC-023, SPEC-024, SPEC-025  
+**Phase**: Phase 5 - Backend Authentication  
 **Module**: Authentication  
-**Title**: Authentication Foundation, Security Utilities, Middleware & Validation Documentation  
+**Title**: Authentication Foundation, Security Utilities, Middleware, Validation & Service Documentation  
 **Date**: 2026-08-02  
 
 ---
 
 ## 🏗️ Architecture Overview
 
-The `auth` module provides the architectural blueprint and foundational layer for all identity, authentication, session management, and RBAC operations within FleetCore. It adheres to modular domain design principles, isolating authentication configuration, contracts, interfaces, utilities, middlewares, and validation schemas.
+The `auth` module provides the architectural blueprint and foundational layer for all identity, authentication, session management, and RBAC operations within FleetCore. It adheres to modular domain design principles, isolating authentication configuration, contracts, interfaces, utilities, middlewares, validation schemas, and business services.
 
 ---
 
@@ -35,7 +35,8 @@ backend/src/modules/auth/
 ├── routes/
 │   └── index.ts             # Express router definitions (Future SPECs)
 ├── services/
-│   └── index.ts             # Authentication business logic services (Future SPECs)
+│   ├── auth.service.ts      # Domain business logic for authentication & user identity
+│   └── index.ts             # Barrel export
 ├── types/
 │   ├── auth.types.ts        # Foundational TypeScript type aliases (AuthTokenType, UserRoleName)
 │   └── index.ts             # Barrel export
@@ -51,25 +52,29 @@ backend/src/modules/auth/
 
 ---
 
+## ⚙️ Authentication Service (`SPEC-025`)
+
+The authentication service (`backend/src/modules/auth/services/auth.service.ts`) encapsulates all core business logic for user authentication, isolated from HTTP layer concerns (Express `req`/`res`).
+
+### Core Methods & Workflows
+- **`login(credentials: LoginRequest): Promise<LoginResponse>`**:
+  1. Queries Prisma `User` table by `email`, retrieving attached `company` and `role` relations.
+  2. Verifies user exists & compares plaintext password against stored `passwordHash` via `comparePassword`.
+  3. Validates `user.status === 'ACTIVE'` and parent `company.status === 'ACTIVE'`.
+  4. Generates Access and Refresh JWT token pair via `generateAccessToken` and `generateRefreshToken`.
+  5. Updates `lastLogin` timestamp in PostgreSQL.
+  6. Returns structured `LoginResponse` (`AuthenticatedUser` + `TokenPair`), excluding `passwordHash`.
+- **Placeholders**: `refreshToken()`, `logout()`, `forgotPassword()`, `resetPassword()`, `changePassword()`.
+
+---
+
 ## 📐 Authentication Validation Schemas (`SPEC-024`)
 
-The validation schemas (`backend/src/modules/auth/validators/auth.validator.ts`) provide centralized Zod request payloads validation:
-
-### Schemas & Inferred Types
-- **`loginSchema` / `LoginInput`**: Validates email format and non-empty password.
-- **`refreshTokenSchema` / `RefreshTokenInput`**: Validates non-empty `refreshToken` string.
-- **`changePasswordSchema` / `ChangePasswordInput`**: Validates current password, applies `passwordSchema` strength refinement to `newPassword`, and confirms `confirmPassword` equality.
-- **`forgotPasswordSchema` / `ForgotPasswordInput`**: Validates user email address format.
-- **`resetPasswordSchema` / `ResetPasswordInput`**: Validates reset token, applies `passwordSchema` refinement to `newPassword`, and enforces equality with `confirmPassword`.
-
-### Reused Security Refinement
-- **`passwordSchema`**: Integrates directly with `validatePasswordStrength(password)` from `password.util.ts`, ensuring 8-128 char length, uppercase, lowercase, digit, and special character requirements without duplicating validation logic.
+The validation schemas (`backend/src/modules/auth/validators/auth.validator.ts`) provide centralized Zod request payload validation (`loginSchema`, `refreshTokenSchema`, `changePasswordSchema`, `forgotPasswordSchema`, `resetPasswordSchema`).
 
 ---
 
 ## 🔄 Middleware Execution Lifecycle
-
-FleetCore enforces a strict security middleware execution order:
 
 ```text
        Incoming HTTP Request
@@ -86,26 +91,16 @@ FleetCore enforces a strict security middleware execution order:
                  │
                  ▼
        ┌───────────────────┐
-       │ Route Controller  │ ---> Validates body payload via Zod schemas & executes business logic.
+       │ Route Controller  │ ---> Validates body via Zod schemas & delegates to AuthService.
        └───────────────────┘
 ```
 
 ---
 
-## 👑 Role-Based Access Control (RBAC) Middleware (`SPEC-023`)
+## 👑 RBAC Middleware (`SPEC-023`) & 🛡️ Auth Middleware (`SPEC-022`)
 
-The RBAC middleware (`backend/src/modules/auth/middlewares/rbac.middleware.ts`) exposes `authorize(...allowedRoles)`:
-- Compares `req.authenticatedUser.roleName` against allowed roles.
-- Returns HTTP `403 Forbidden` (`INSUFFICIENT_PERMISSIONS`) when unauthorized.
-
----
-
-## 🛡️ Authentication Middleware (`SPEC-022`)
-
-The authentication middleware (`backend/src/modules/auth/middlewares/auth.middleware.ts`) exposes `authenticate`:
-- Reads `Authorization` header (`Bearer <token>`).
-- Verifies signature & expiration via `verifyAccessToken(token)`.
-- Attaches user claims to `req.authenticatedUser`.
+- **`authorize(...allowedRoles)`**: Evaluates user role permissions.
+- **`authenticate`**: Verifies Bearer JWTs and binds identity context.
 
 ---
 
@@ -136,5 +131,6 @@ The authentication middleware (`backend/src/modules/auth/middlewares/auth.middle
 4. **SPEC-022 (Completed)**: Authentication Middleware (`authenticate`).
 5. **SPEC-023 (Completed)**: RBAC Middleware (`authorize`).
 6. **SPEC-024 (Completed)**: Authentication Validation Schemas (`auth.validator.ts`).
-7. **SPEC-025**: User Registration & Login API endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`).
-8. **SPEC-026**: Token Refresh & Logout API endpoints (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).
+7. **SPEC-025 (Completed)**: Authentication Service (`auth.service.ts`).
+8. **SPEC-026**: User Registration & Login API endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`).
+9. **SPEC-027**: Token Refresh & Logout API endpoints (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).
