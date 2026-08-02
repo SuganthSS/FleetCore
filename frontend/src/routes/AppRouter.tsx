@@ -5,6 +5,7 @@ import { AuthLayout } from '@/layouts/AuthLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { VehiclesPage } from '@/pages/VehiclesPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
@@ -42,10 +43,15 @@ const router = createBrowserRouter([
             path: '/dashboard',
             element: <DashboardPage />,
           },
+          {
+            path: '/vehicles',
+            element: <VehiclesPage />,
+          },
         ],
       },
     ],
   },
+
 
   /* ── 404 catch-all ── */
   {
