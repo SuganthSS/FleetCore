@@ -83,8 +83,9 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     lastName: '',
     companyId: payload.companyId,
     roleId: payload.roleId,
-    roleName: '',
+    roleName: payload.roleName || '',
   };
+
 
   req.authenticatedUser = authenticatedUser;
 

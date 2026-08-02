@@ -13,10 +13,12 @@ export interface JwtPayload {
   email: string;
   companyId: string;
   roleId: string;
+  roleName?: string;
   type: string;
   iat?: number;
   exp?: number;
 }
+
 
 export interface RefreshTokenPayload {
   sub: string;

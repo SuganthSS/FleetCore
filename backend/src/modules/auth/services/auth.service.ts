@@ -60,7 +60,9 @@ export class AuthService {
       email: user.email,
       companyId: user.companyId,
       roleId: user.roleId,
+      roleName: user.role.name,
     });
+
 
     const refreshToken = generateRefreshToken({
       sub: user.id,
