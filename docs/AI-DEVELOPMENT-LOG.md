@@ -96,7 +96,8 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-081** | Dashboard Routes Layer | Completed | 2026-08-02 | `51b3401` |
 | **SPEC-082** | Dashboard Integration Testing & Production Hardening | Completed | 2026-08-02 | `a913d26` |
 | **SPEC-083** | Frontend Foundation | Completed | 2026-08-02 | `807b80f` |
-| **SPEC-084** | FleetCore Authentication UI | Completed | 2026-08-02 | `823ddb0e071ef4a657a394312b5921b313892951` |
+| **SPEC-084** | FleetCore Authentication UI | Completed | 2026-08-02 | `429c43d4bb20e08fe51f23ba7b104aad079cc8f1` |
+
 
 
 
