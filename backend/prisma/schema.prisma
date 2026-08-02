@@ -138,13 +138,14 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users     User[]
-  drivers   Driver[]
-  vehicles  Vehicle[]
-  customers Customer[]
-  shipments Shipment[]
-  routes    Route[]
-  trips     Trip[]
+  users       User[]
+  drivers     Driver[]
+  vehicles    Vehicle[]
+  customers   Customer[]
+  shipments   Shipment[]
+  routes      Route[]
+  trips       Trip[]
+  fuelRecords FuelRecord[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -264,10 +265,11 @@ model Driver {
   updatedAt             DateTime           @updatedAt
 
   /// Associated User account relation
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   /// Parent Company relation
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  trips   Trip[]
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips       Trip[]
+  fuelRecords FuelRecord[]
 
   @@index([companyId])
   @@index([availability])
@@ -311,8 +313,9 @@ model Vehicle {
   updatedAt          DateTime      @updatedAt
 
   /// Parent Company relation
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  trips   Trip[]
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips       Trip[]
+  fuelRecords FuelRecord[]
 
   @@index([companyId])
   @@index([vehicleType])
@@ -548,15 +551,16 @@ model Trip {
   updatedAt          DateTime   @updatedAt
 
   /// Parent Company relation
-  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   /// Assigned Driver relation
-  driver   Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  driver      Driver       @relation(fields: [driverId], references: [id], onDelete: Cascade)
   /// Assigned Vehicle relation
-  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   /// Executed Shipment relation
-  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  shipment    Shipment     @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
   /// Planned Route relation
-  route    Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  route       Route        @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  fuelRecords FuelRecord[]
 
   @@index([companyId])
   @@index([driverId])
@@ -566,5 +570,65 @@ model Trip {
   @@index([status])
   @@index([scheduledStartTime])
   @@index([actualStartTime])
+  @@index([createdAt])
+}
+
+/// --------------------------------------------
+/// FuelRecord
+/// Represents a vehicle refueling operational event.
+/// Stores fuel consumption, cost, station details, and odometer readings.
+/// Links Company, Vehicle, Driver, and Trip.
+/// --------------------------------------------
+model FuelRecord {
+  /// Primary key UUID
+  id               String   @id @default(uuid())
+  /// Unique fuel transaction / receipt reference number
+  fuelRecordNumber String   @unique
+  /// Fuel or energy source type refueled
+  fuelType         FuelType @default(DIESEL)
+  /// Quantity of fuel dispensed (e.g. in liters or gallons)
+  quantity         Float
+  /// Price per unit of fuel
+  pricePerUnit     Float
+  /// Total cost of refueling transaction
+  totalCost        Float
+  /// Vehicle odometer reading at time of refueling (e.g. in km or miles)
+  odometerReading  Float
+  /// Name of fuel station or service provider
+  stationName      String?
+  /// Geographic address or city location of fuel station
+  stationLocation  String?
+  /// Date and time when refueling occurred
+  refueledAt       DateTime
+  /// Additional operational notes or receipts comments
+  notes            String?
+  /// Foreign key referencing parent Company
+  companyId        String
+  /// Foreign key referencing refueled Vehicle
+  vehicleId        String
+  /// Foreign key referencing refueling Driver
+  driverId         String
+  /// Foreign key referencing associated Trip
+  tripId           String
+  /// Creation timestamp
+  createdAt        DateTime @default(now())
+  /// Last modification timestamp
+  updatedAt        DateTime @updatedAt
+
+  /// Parent Company relation
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  /// Refueled Vehicle relation
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  /// Refueling Driver relation
+  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  /// Associated Trip relation
+  trip    Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([tripId])
+  @@index([fuelType])
+  @@index([refueledAt])
   @@index([createdAt])
 }

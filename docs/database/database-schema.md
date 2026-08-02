@@ -6,7 +6,7 @@ This document describes the database schema, models, field definitions, indexes,
 
 ## 🏢 Company Model
 
-The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, Trips, etc.) within FleetCore.
+The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, Trips, FuelRecords, etc.) within FleetCore.
 
 ### Schema Definition
 
@@ -37,13 +37,14 @@ model Company {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  users     User[]
-  drivers   Driver[]
-  vehicles  Vehicle[]
-  customers Customer[]
-  shipments Shipment[]
-  routes    Route[]
-  trips     Trip[]
+  users       User[]
+  drivers     Driver[]
+  vehicles    Vehicle[]
+  customers   Customer[]
+  shipments   Shipment[]
+  routes      Route[]
+  trips       Trip[]
+  fuelRecords FuelRecord[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -260,9 +261,10 @@ model Driver {
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  trips   Trip[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips       Trip[]
+  fuelRecords FuelRecord[]
 
   @@index([companyId])
   @@index([availability])
@@ -362,8 +364,9 @@ model Vehicle {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  trips   Trip[]
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  trips       Trip[]
+  fuelRecords FuelRecord[]
 
   @@index([companyId])
   @@index([vehicleType])
@@ -760,11 +763,12 @@ model Trip {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
-  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  driver   Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
-  route    Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  driver      Driver       @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  shipment    Shipment     @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  route       Route        @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  fuelRecords FuelRecord[]
 
   @@index([companyId])
   @@index([driverId])
@@ -820,4 +824,96 @@ model Trip {
 - `vehicle`: `Trip N -> 1 Vehicle` (`onDelete: Cascade`)
 - `shipment`: `Trip N -> 1 Shipment` (`onDelete: Cascade`)
 - `route`: `Trip N -> 1 Route` (`onDelete: Cascade`)
-- **Future Relations**: Prepared for `LocationHistory`, `FuelRecords`, and `Notifications`.
+- `fuelRecords`: `Trip 1 -> N FuelRecord`
+
+---
+
+## ⛽ FuelRecord Model
+
+The `FuelRecord` model stores every vehicle refueling event in operational history. It captures fuel consumption, cost breakdown, station details, odometer readings, and links back to the associated `Company`, `Vehicle`, `Driver`, and `Trip`.
+
+### Enum Usage
+- Reuses existing `FuelType` enum (`DIESEL`, `PETROL`, `ELECTRIC`, `HYBRID`, `CNG`, `LPG`).
+
+### Schema Definition
+
+```prisma
+/// --------------------------------------------
+/// FuelRecord
+/// Represents a vehicle refueling operational event.
+/// Stores fuel consumption, cost, station details, and odometer readings.
+/// Links Company, Vehicle, Driver, and Trip.
+/// --------------------------------------------
+model FuelRecord {
+  id               String   @id @default(uuid())
+  fuelRecordNumber String   @unique
+  fuelType         FuelType @default(DIESEL)
+  quantity         Float
+  pricePerUnit     Float
+  totalCost        Float
+  odometerReading  Float
+  stationName      String?
+  stationLocation  String?
+  refueledAt       DateTime
+  notes            String?
+  companyId        String
+  vehicleId        String
+  driverId         String
+  tripId           String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  driver  Driver  @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  trip    Trip    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([tripId])
+  @@index([fuelType])
+  @@index([refueledAt])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `fuelRecordNumber` | `String` | Required, `@unique` | Unique fuel transaction / receipt reference code |
+| `fuelType` | `FuelType` | `@default(DIESEL)` | Fuel / energy type dispensed (`DIESEL`, `PETROL`, `ELECTRIC`, `HYBRID`, `CNG`, `LPG`) |
+| `quantity` | `Float` | Required | Quantity of fuel dispensed (e.g. liters / gallons) |
+| `pricePerUnit` | `Float` | Required | Unit cost price per liter / gallon |
+| `totalCost` | `Float` | Required | Total refueling transaction cost |
+| `odometerReading` | `Float` | Required | Vehicle odometer reading at refueling time (e.g. km / miles) |
+| `stationName` | `String` | Optional | Name of gas station or fuel vendor |
+| `stationLocation` | `String` | Optional | Address or location of gas station |
+| `refueledAt` | `DateTime` | Required | Date and time when refueling occurred |
+| `notes` | `String` | Optional | Operational notes, receipts comments, or observations |
+| `companyId` | `String` | Foreign Key | References parent `Company.id` |
+| `vehicleId` | `String` | Foreign Key | References refueled `Vehicle.id` |
+| `driverId` | `String` | Foreign Key | References refueling `Driver.id` |
+| `tripId` | `String` | Foreign Key | References associated `Trip.id` |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Modification timestamp |
+
+### Indexes
+
+- `@unique` on `fuelRecordNumber`: Prevents duplicate fuel transaction reference numbers.
+- `@@index([companyId])`: Multi-tenant fuel expenditure filtering.
+- `@@index([vehicleId])`: Vehicle fuel consumption efficiency and mileage tracking.
+- `@@index([driverId])`: Driver fuel expense auditing.
+- `@@index([tripId])`: Trip-specific fuel expense allocation.
+- `@@index([fuelType])`: Fuel type usage and carbon footprint analytics.
+- `@@index([refueledAt])`: Time-series fuel expenditure queries.
+- `@@index([createdAt])`: Chronological audit log indexing.
+
+### Relationships
+
+- `company`: `FuelRecord N -> 1 Company` (`onDelete: Cascade`)
+- `vehicle`: `FuelRecord N -> 1 Vehicle` (`onDelete: Cascade`)
+- `driver`: `FuelRecord N -> 1 Driver` (`onDelete: Cascade`)
+- `trip`: `FuelRecord N -> 1 Trip` (`onDelete: Cascade`)
