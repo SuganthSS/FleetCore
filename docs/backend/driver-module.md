@@ -2,7 +2,7 @@
 
 **Module**: Driver Management (`backend/src/modules/driver`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation & Service Layers Implemented  
+**Status**: Validation, Service & Controller Layers Implemented  
 
 ---
 
@@ -70,10 +70,53 @@ The `DriverService` class provides framework-independent CRUD operations and bus
 
 ---
 
+## 🎮 Driver Controller Layer (`controllers/driver.controller.ts`)
+
+The `DriverController` provides thin Express request handlers that validate input via Zod schemas, extract authenticated tenant `companyId` context, delegate business logic to `DriverService`, and return standardized JSON HTTP responses.
+
+### Request Lifecycle
+```text
+HTTP Request ➔ Express Router (/api/v1/drivers) ➔ Auth/RBAC Middleware ➔ DriverController ➔ Zod Validation ➔ DriverService ➔ Prisma Client ➔ Standardized HTTP Response
+```
+
+### Standardized Response Formats
+
+#### Success Response
+```json
+{
+  "success": true,
+  "message": "Driver created successfully",
+  "data": { ... }
+}
+```
+
+#### Validation Error (HTTP 400)
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    "Employee ID is required",
+    "Invalid User ID UUID format"
+  ]
+}
+```
+
+#### Conflict Error (HTTP 409)
+```json
+{
+  "success": false,
+  "message": "Driver with employee ID 'EMP-001' already exists."
+}
+```
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  driverController,
   driverService,
   CreateDriverInput,
   UpdateDriverInput,
