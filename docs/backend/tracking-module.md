@@ -2,7 +2,7 @@
 
 **Module**: Tracking & Location History (`backend/src/modules/tracking`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation Layer Implemented  
+**Status**: Validation & Service Layers Implemented  
 
 ---
 
@@ -53,10 +53,39 @@ Validates query params for filtering, searching, sorting, and paginating trackin
 
 ---
 
+## ⚙️ Tracking Service Layer (`services/tracking.service.ts`)
+
+The `TrackingService` class manages vehicle location breadcrumb entries (`VehicleLocationHistory`), tenant isolation, and strict cross-entity relationship verification.
+
+### Business Rules & Tenant Isolation
+1. **`createTracking(input: CreateTrackingInput)`**:
+   - Verifies existence of `Company`, `Vehicle`, and `Trip`.
+   - **Tenant Scoping**: Verifies `Vehicle.companyId === input.companyId`, `Trip.companyId === input.companyId`, and optional `Driver.companyId === input.companyId`.
+   - **Cross-Entity Association Guards**:
+     - Verifies `Trip.vehicleId === input.vehicleId`.
+     - Verifies `Trip.driverId === input.driverId` (if `driverId` is provided).
+   - Includes `vehicle`, `trip`, `driver`, and `company` relations in response.
+2. **`getTrackingById(id: string, companyId?: string)`**:
+   - Retrieves location history entry by UUID with full relations.
+   - Enforces multi-tenant isolation when `companyId` is provided (cross-tenant access returns Not Found).
+3. **`getTrackingHistory(query: TrackingQueryInput, companyId?: string)`**:
+   - Supports paginated listing with `total`, `page`, `limit`, `totalPages` metadata.
+   - Enforces company isolation via `companyId`.
+   - Supports filters: `tripId`, `vehicleId`, `driverId`, `companyId`.
+   - Supports sorting by: `createdAt`, `recordedAt`, `speed`.
+4. **`updateTracking(id: string, input: UpdateTrackingInput, companyId?: string)`**:
+   - Verifies record exists within company tenant boundary.
+   - Re-verifies vehicle/trip/driver company alignment and relationship integrity if modified.
+5. **`deleteTracking(id: string, companyId?: string)`**:
+   - Verifies record exists within company tenant boundary before hard deletion.
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  trackingService,
   createTrackingSchema,
   updateTrackingSchema,
   trackingIdParamSchema,
@@ -65,5 +94,7 @@ import {
   UpdateTrackingInput,
   TrackingIdInput,
   TrackingQueryInput,
+  PaginatedTrackingResult,
 } from './modules/tracking';
 ```
+
