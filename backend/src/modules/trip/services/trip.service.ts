@@ -36,9 +36,14 @@ const defaultTripInclude = {
     select: {
       id: true,
       employeeId: true,
-      firstName: true,
-      lastName: true,
-      status: true,
+      availability: true,
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+          status: true,
+        },
+      },
     },
   },
   route: {
@@ -57,6 +62,19 @@ const defaultTripInclude = {
     },
   },
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapTrip(trip: any): any {
+  if (!trip) return trip;
+  if (trip.driver) {
+    trip.driver.firstName = trip.driver.user?.firstName || '';
+    trip.driver.lastName = trip.driver.user?.lastName || '';
+    trip.driver.status = trip.driver.user?.status || '';
+    delete trip.driver.user;
+  }
+  return trip;
+}
+
 
 export class TripService {
   /**
@@ -148,7 +166,7 @@ export class TripService {
       include: defaultTripInclude,
     });
 
-    return trip;
+    return mapTrip(trip);
   }
 
   /**
@@ -173,7 +191,7 @@ export class TripService {
       throw new Error(`Trip with ID '${id}' not found.`);
     }
 
-    return trip;
+    return mapTrip(trip);
   }
 
   /**
@@ -253,7 +271,7 @@ export class TripService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      items,
+      items: items.map(mapTrip),
       total,
       page,
       limit,
@@ -382,7 +400,7 @@ export class TripService {
       include: defaultTripInclude,
     });
 
-    return updatedTrip;
+    return mapTrip(updatedTrip);
   }
 
   /**

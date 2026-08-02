@@ -36,9 +36,13 @@ const defaultTrackingInclude = {
   driver: {
     select: {
       id: true,
-      firstName: true,
-      lastName: true,
       licenseNumber: true,
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+      },
     },
   },
   company: {
@@ -48,6 +52,18 @@ const defaultTrackingInclude = {
     },
   },
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapTracking(record: any): any {
+  if (!record) return record;
+  if (record.driver) {
+    record.driver.firstName = record.driver.user?.firstName || '';
+    record.driver.lastName = record.driver.user?.lastName || '';
+    delete record.driver.user;
+  }
+  return record;
+}
+
 
 export class TrackingService {
   /**
@@ -135,7 +151,7 @@ export class TrackingService {
       include: defaultTrackingInclude,
     });
 
-    return tracking;
+    return mapTracking(tracking);
   }
 
   /**
@@ -163,7 +179,7 @@ export class TrackingService {
       throw new Error(`Tracking location record with ID '${id}' not found.`);
     }
 
-    return tracking;
+    return mapTracking(tracking);
   }
 
   /**
@@ -253,7 +269,7 @@ export class TrackingService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      items,
+      items: items.map(mapTracking),
       total,
       page,
       limit,
@@ -366,7 +382,7 @@ export class TrackingService {
       include: defaultTrackingInclude,
     });
 
-    return updatedRecord;
+    return mapTracking(updatedRecord);
   }
 
   /**

@@ -27,9 +27,13 @@ const defaultMaintenanceInclude = {
   driver: {
     select: {
       id: true,
-      firstName: true,
-      lastName: true,
       licenseNumber: true,
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+      },
     },
   },
   company: {
@@ -39,6 +43,18 @@ const defaultMaintenanceInclude = {
     },
   },
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapMaintenance(record: any): any {
+  if (!record) return record;
+  if (record.driver) {
+    record.driver.firstName = record.driver.user?.firstName || '';
+    record.driver.lastName = record.driver.user?.lastName || '';
+    delete record.driver.user;
+  }
+  return record;
+}
+
 
 export class MaintenanceService {
   /**
@@ -131,7 +147,7 @@ export class MaintenanceService {
       include: defaultMaintenanceInclude,
     });
 
-    return maintenance;
+    return mapMaintenance(maintenance);
   }
 
   /**
@@ -159,7 +175,7 @@ export class MaintenanceService {
       throw new Error(`Maintenance record with ID '${id}' not found.`);
     }
 
-    return maintenance;
+    return mapMaintenance(maintenance);
   }
 
   /**
@@ -227,7 +243,7 @@ export class MaintenanceService {
     const totalPages = Math.ceil(total / limit);
 
     return {
-      items,
+      items: items.map(mapMaintenance),
       total,
       page,
       limit,
@@ -326,7 +342,7 @@ export class MaintenanceService {
       include: defaultMaintenanceInclude,
     });
 
-    return updatedRecord;
+    return mapMaintenance(updatedRecord);
   }
 
   /**
