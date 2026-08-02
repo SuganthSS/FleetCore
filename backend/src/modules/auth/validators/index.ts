@@ -1,2 +1,1 @@
-// Validators directory placeholder export
-export {};
+export * from './auth.validator';

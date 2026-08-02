@@ -1,16 +1,16 @@
 # FleetCore Authentication Foundation Architecture
 
-**SPEC ID**: SPEC-019, SPEC-020, SPEC-021, SPEC-022, SPEC-023  
+**SPEC ID**: SPEC-019, SPEC-020, SPEC-021, SPEC-022, SPEC-023, SPEC-024  
 **Phase**: Phase 5 - Backend Foundation  
 **Module**: Authentication  
-**Title**: Authentication Foundation, Utilities & RBAC Middleware Documentation  
+**Title**: Authentication Foundation, Security Utilities, Middleware & Validation Documentation  
 **Date**: 2026-08-02  
 
 ---
 
 ## 🏗️ Architecture Overview
 
-The `auth` module provides the architectural blueprint and foundational layer for all identity, authentication, session management, and RBAC operations within FleetCore. It adheres to modular domain design principles, isolating authentication configuration, contracts, interfaces, utilities, and middlewares.
+The `auth` module provides the architectural blueprint and foundational layer for all identity, authentication, session management, and RBAC operations within FleetCore. It adheres to modular domain design principles, isolating authentication configuration, contracts, interfaces, utilities, middlewares, and validation schemas.
 
 ---
 
@@ -44,15 +44,32 @@ backend/src/modules/auth/
 │   ├── jwt.util.ts          # Access/Refresh JWT generation, verification & decoding
 │   └── index.ts             # Barrel export
 ├── validators/
-│   └── index.ts             # Request payload Zod validation schemas (Future SPECs)
+│   ├── auth.validator.ts    # Zod schemas for login, refresh, change/forgot/reset password
+│   └── index.ts             # Barrel export
 └── index.ts                 # Master barrel export for the auth module
 ```
 
 ---
 
+## 📐 Authentication Validation Schemas (`SPEC-024`)
+
+The validation schemas (`backend/src/modules/auth/validators/auth.validator.ts`) provide centralized Zod request payloads validation:
+
+### Schemas & Inferred Types
+- **`loginSchema` / `LoginInput`**: Validates email format and non-empty password.
+- **`refreshTokenSchema` / `RefreshTokenInput`**: Validates non-empty `refreshToken` string.
+- **`changePasswordSchema` / `ChangePasswordInput`**: Validates current password, applies `passwordSchema` strength refinement to `newPassword`, and confirms `confirmPassword` equality.
+- **`forgotPasswordSchema` / `ForgotPasswordInput`**: Validates user email address format.
+- **`resetPasswordSchema` / `ResetPasswordInput`**: Validates reset token, applies `passwordSchema` refinement to `newPassword`, and enforces equality with `confirmPassword`.
+
+### Reused Security Refinement
+- **`passwordSchema`**: Integrates directly with `validatePasswordStrength(password)` from `password.util.ts`, ensuring 8-128 char length, uppercase, lowercase, digit, and special character requirements without duplicating validation logic.
+
+---
+
 ## 🔄 Middleware Execution Lifecycle
 
-FleetCore enforces a strict two-stage security middleware execution order:
+FleetCore enforces a strict security middleware execution order:
 
 ```text
        Incoming HTTP Request
@@ -69,7 +86,7 @@ FleetCore enforces a strict two-stage security middleware execution order:
                  │
                  ▼
        ┌───────────────────┐
-       │ Route Controller  │ ---> Executes business logic for authorized requests.
+       │ Route Controller  │ ---> Validates body payload via Zod schemas & executes business logic.
        └───────────────────┘
 ```
 
@@ -77,24 +94,18 @@ FleetCore enforces a strict two-stage security middleware execution order:
 
 ## 👑 Role-Based Access Control (RBAC) Middleware (`SPEC-023`)
 
-The RBAC middleware (`backend/src/modules/auth/middlewares/rbac.middleware.ts`) exposes the `authorize(...allowedRoles)` higher-order function:
-
-### Flow & Responsibilities
-1. **Context Inspection**: Checks for `req.authenticatedUser` created by `authenticate()`.
-   - If missing, responds HTTP `401 Unauthorized` (`UNAUTHENTICATED_CONTEXT_MISSING`).
-2. **Role Comparison**: Compares `req.authenticatedUser.roleName` (or `roleId`) against the array of `allowedRoles`.
-   - Reuses `UserRoleName` type (`'Super Admin'`, `'Company Admin'`, `'Fleet Manager'`, `'Dispatcher'`, `'Driver'`).
-   - If role is not allowed, responds HTTP `403 Forbidden` (`INSUFFICIENT_PERMISSIONS`).
-3. **Dispatch**: Calls `next()` if user has sufficient privileges.
+The RBAC middleware (`backend/src/modules/auth/middlewares/rbac.middleware.ts`) exposes `authorize(...allowedRoles)`:
+- Compares `req.authenticatedUser.roleName` against allowed roles.
+- Returns HTTP `403 Forbidden` (`INSUFFICIENT_PERMISSIONS`) when unauthorized.
 
 ---
 
 ## 🛡️ Authentication Middleware (`SPEC-022`)
 
 The authentication middleware (`backend/src/modules/auth/middlewares/auth.middleware.ts`) exposes `authenticate`:
-- **Header Inspection**: Reads `Authorization` header (`Bearer <token>`).
-- **JWT Verification**: Verifies signature & expiration via `verifyAccessToken(token)`.
-- **Request Context**: Attaches user claims to `req.authenticatedUser`.
+- Reads `Authorization` header (`Bearer <token>`).
+- Verifies signature & expiration via `verifyAccessToken(token)`.
+- Attaches user claims to `req.authenticatedUser`.
 
 ---
 
@@ -124,5 +135,6 @@ The authentication middleware (`backend/src/modules/auth/middlewares/auth.middle
 3. **SPEC-021 (Completed)**: JWT Utilities.
 4. **SPEC-022 (Completed)**: Authentication Middleware (`authenticate`).
 5. **SPEC-023 (Completed)**: RBAC Middleware (`authorize`).
-6. **SPEC-024**: User Registration & Login API endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`).
-7. **SPEC-025**: Token Refresh & Logout API endpoints (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).
+6. **SPEC-024 (Completed)**: Authentication Validation Schemas (`auth.validator.ts`).
+7. **SPEC-025**: User Registration & Login API endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`).
+8. **SPEC-026**: Token Refresh & Logout API endpoints (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).

@@ -34,4 +34,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-020** | Password Utility Module | Completed | 2026-08-02 | `81efd849fcbee455b8102ba8ad3d094933c1084c` |
 | **SPEC-021** | JWT Utility Module | Completed | 2026-08-02 | `1a5ab67314f0f03f2ce45d9c59c3016fbfba8512` |
 | **SPEC-022** | Authentication Middleware | Completed | 2026-08-02 | `1deb8666de1d9538639c8f6b8653b4c5de105336` |
-| **SPEC-023** | Role-Based Access Control (RBAC) Middleware | Completed | 2026-08-02 | `d6cac5c90e6f8eace2a23c1d6f2e360fa7d419c9` |
+| **SPEC-023** | Role-Based Access Control (RBAC) Middleware | Completed | 2026-08-02 | `49755bfef67cfcfe08a6dd1fdc47f1a23a283e1b` |
+| **SPEC-024** | Authentication Validation Schemas | Completed | 2026-08-02 | `fedae269c9ca5256b710b980c825bd2fc636c988` |
