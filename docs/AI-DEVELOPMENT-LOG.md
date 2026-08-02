@@ -27,4 +27,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-013** | Maintenance Record Model | Completed | 2026-08-02 | `df3650505f8bd18370a441e816feef4b36b08c3b` |
 | **SPEC-014** | Vehicle Location History Model | Completed | 2026-08-02 | `eaeeec016a976649462d7be84a9abce232f18a23` |
 | **SPEC-015** | Notification Model | Completed | 2026-08-02 | `5461f306648c5628ef5e1930fd0d211b5f20220e` |
-| **SPEC-016** | Database Schema Audit | Completed | 2026-08-02 | `763cde329ce95feac823d397ef1a8006d6613fdd` |
+| **SPEC-016** | Database Schema Audit | Completed | 2026-08-02 | `342c69c19b179ac3fb92bcb2c35b50356cd0b65a` |
+| **SPEC-017** | Initial Prisma Migration | Completed | 2026-08-02 | `69eb3e253fab41e9fc098d9d5c64bc13551117fc` |
