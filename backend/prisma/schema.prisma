@@ -92,6 +92,23 @@ enum ShipmentStatus {
   FAILED
 }
 
+enum RouteType {
+  HIGHWAY
+  URBAN
+  INTERSTATE
+  CROSS_BORDER
+  REGIONAL
+  LAST_MILE
+}
+
+enum RouteStatus {
+  PLANNED
+  ACTIVE
+  OPTIMIZED
+  COMPLETED
+  CANCELLED
+}
+
 model Company {
   id                 String        @id @default(uuid())
   name               String
@@ -116,6 +133,7 @@ model Company {
   vehicles  Vehicle[]
   customers Customer[]
   shipments Shipment[]
+  routes    Route[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -403,6 +421,7 @@ model Shipment {
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   /// Parent Company relation
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  routes   Route[]
 
   @@index([companyId])
   @@index([customerId])
@@ -411,5 +430,62 @@ model Shipment {
   @@index([priority])
   @@index([pickupDate])
   @@index([expectedDeliveryDate])
+  @@index([createdAt])
+}
+
+/// --------------------------------------------
+/// Route
+/// Represents the planned transportation path for a Shipment.
+/// Route contains planning metrics only.
+/// Belongs to a Shipment and a Company.
+/// Vehicle and driver assignment occurs through Trip.
+/// --------------------------------------------
+model Route {
+  /// Primary key UUID
+  id                 String      @id @default(uuid())
+  /// Unique route identification code
+  routeCode          String      @unique
+  /// Planned origin pickup street address
+  originAddress      String
+  /// Planned origin city
+  originCity         String
+  /// Planned origin state / province
+  originState        String?
+  /// Planned origin country
+  originCountry      String
+  /// Planned destination delivery street address
+  destinationAddress String
+  /// Planned destination city
+  destinationCity    String
+  /// Planned destination state / province
+  destinationState   String?
+  /// Planned destination country
+  destinationCountry String
+  /// Total planned distance (e.g. in km)
+  plannedDistance    Float?
+  /// Total estimated duration (e.g. in minutes or hours)
+  estimatedDuration  Float?
+  /// Route classification category
+  routeType          RouteType   @default(HIGHWAY)
+  /// Planning status of the route
+  status             RouteStatus @default(PLANNED)
+  /// Foreign key referencing parent Shipment
+  shipmentId         String
+  /// Foreign key referencing parent Company
+  companyId          String
+  /// Creation timestamp
+  createdAt          DateTime    @default(now())
+  /// Last modification timestamp
+  updatedAt          DateTime    @updatedAt
+
+  /// Parent Shipment relation
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  /// Parent Company relation
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([shipmentId])
+  @@index([status])
+  @@index([routeType])
   @@index([createdAt])
 }

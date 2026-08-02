@@ -6,7 +6,7 @@ This document describes the database schema, models, field definitions, indexes,
 
 ## 🏢 Company Model
 
-The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, etc.) within FleetCore.
+The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, etc.) within FleetCore.
 
 ### Schema Definition
 
@@ -42,6 +42,7 @@ model Company {
   vehicles  Vehicle[]
   customers Customer[]
   shipments Shipment[]
+  routes    Route[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -538,6 +539,7 @@ model Shipment {
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  routes   Route[]
 
   @@index([companyId])
   @@index([customerId])
@@ -598,3 +600,105 @@ model Shipment {
 - `customer`: `Shipment N -> 1 Customer` (`onDelete: Cascade`)
 - `company`: `Shipment N -> 1 Company` (`onDelete: Cascade`)
 - **Future Relations**: Prepared for `Route`, `Trip`, `Notifications`, and `Documents`.
+
+---
+
+## 🗺️ Route Model
+
+The `Route` model represents the planned transportation path and metrics for a `Shipment`. A `Route` contains planning information only (origin, destination, distance, estimated duration) and belongs to a parent `Shipment` and `Company`. Vehicle and driver assignments are handled dynamically through `Trip`.
+
+### Schema Definition
+
+```prisma
+enum RouteType {
+  HIGHWAY
+  URBAN
+  INTERSTATE
+  CROSS_BORDER
+  REGIONAL
+  LAST_MILE
+}
+
+enum RouteStatus {
+  PLANNED
+  ACTIVE
+  OPTIMIZED
+  COMPLETED
+  CANCELLED
+}
+
+/// --------------------------------------------
+/// Route
+/// Represents the planned transportation path for a Shipment.
+/// Route contains planning metrics only.
+/// Belongs to a Shipment and a Company.
+/// Vehicle and driver assignment occurs through Trip.
+/// --------------------------------------------
+model Route {
+  id                 String      @id @default(uuid())
+  routeCode          String      @unique
+  originAddress      String
+  originCity         String
+  originState        String?
+  originCountry      String
+  destinationAddress String
+  destinationCity    String
+  destinationState   String?
+  destinationCountry String
+  plannedDistance    Float?
+  estimatedDuration  Float?
+  routeType          RouteType   @default(HIGHWAY)
+  status             RouteStatus @default(PLANNED)
+  shipmentId         String
+  companyId          String
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  shipment Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([shipmentId])
+  @@index([status])
+  @@index([routeType])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `routeCode` | `String` | Required, `@unique` | Unique route identification code |
+| `originAddress` | `String` | Required | Planned origin street address |
+| `originCity` | `String` | Required | Planned origin city |
+| `originState` | `String` | Optional | Planned origin state / province |
+| `originCountry` | `String` | Required | Planned origin country |
+| `destinationAddress` | `String` | Required | Planned destination street address |
+| `destinationCity` | `String` | Required | Planned destination city |
+| `destinationState` | `String` | Optional | Planned destination state / province |
+| `destinationCountry` | `String` | Required | Planned destination country |
+| `plannedDistance` | `Float` | Optional | Total planned route distance (e.g. km) |
+| `estimatedDuration` | `Float` | Optional | Total estimated travel duration (e.g. minutes/hours) |
+| `routeType` | `RouteType` | `@default(HIGHWAY)` | Route classification category (`HIGHWAY`, `URBAN`, `INTERSTATE`, `CROSS_BORDER`, `REGIONAL`, `LAST_MILE`) |
+| `status` | `RouteStatus` | `@default(PLANNED)` | Planning status (`PLANNED`, `ACTIVE`, `OPTIMIZED`, `COMPLETED`, `CANCELLED`) |
+| `shipmentId` | `String` | Foreign Key | References parent `Shipment.id` |
+| `companyId` | `String` | Foreign Key | References parent `Company.id` |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Modification timestamp |
+
+### Indexes
+
+- `@unique` on `routeCode`: Ensures unique route identification codes.
+- `@@index([companyId])`: Multi-tenant route query filtering.
+- `@@index([shipmentId])`: Fast lookup of planned routes for a shipment.
+- `@@index([status])`: Filtering routes by operational planning status.
+- `@@index([routeType])`: Route classification analysis and dispatch optimization.
+- `@@index([createdAt])`: Chronological route creation auditing.
+
+### Relationships
+
+- `shipment`: `Route N -> 1 Shipment` (`onDelete: Cascade`)
+- `company`: `Route N -> 1 Company` (`onDelete: Cascade`)
+- **Future Relations**: Prepared for `Trip` and `Waypoints`.
