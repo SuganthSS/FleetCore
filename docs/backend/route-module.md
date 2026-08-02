@@ -2,7 +2,7 @@
 
 **Module**: Route Management (`backend/src/modules/route`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation & Service Layers Implemented  
+**Status**: Validation, Service & Controller Layers Implemented  
 
 ---
 
@@ -72,10 +72,38 @@ The `RouteService` class provides framework-independent CRUD operations with str
 
 ---
 
+## 🎮 Route Controller Layer (`controllers/route.controller.ts`)
+
+The `RouteController` layer handles HTTP requests, validates inputs via Zod, extracts authenticated tenant context, and maps service outputs/errors into standardized JSON responses.
+
+### HTTP Status Code Mapping
+
+| Status Code | Description | Scenario |
+| :--- | :--- | :--- |
+| **200 OK** | Success | Querying, updating, or deleting routes |
+| **201 Created** | Created | Successfully creating a route |
+| **400 Bad Request** | Validation Error | Payload/Query/Params validation failure |
+| **404 Not Found** | Resource Not Found | Route/Company not found, cross-tenant access |
+| **409 Conflict** | Duplicate Constraint | Duplicate `routeCode` |
+| **500 Error** | Internal Server Error | Unhandled server error |
+
+### Request Lifecycle
+
+```text
+HTTP Request
+  → Zod safeParse (params/query/body)
+  → Extract req.authenticatedUser.companyId
+  → routeService method()
+  → Standardized JSON response
+```
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  routeController,
   routeService,
   createRouteSchema,
   updateRouteSchema,
@@ -88,4 +116,5 @@ import {
   PaginatedRouteResult,
 } from './modules/route';
 ```
+
 

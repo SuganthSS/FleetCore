@@ -62,4 +62,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-047** | Shipment Routes | Completed | 2026-08-02 | `92946390cc60392fbc8a7ec7cedf5a46352ea14e` |
 | **SPEC-048** | Shipment Integration Testing & Production Hardening | Completed | 2026-08-02 | `6de17d7f50521a61c7eff08914987c149eb0ad69` |
 | **SPEC-049** | Route Validation Layer | Completed | 2026-08-02 | `0d1e3fe` |
-| **SPEC-050** | Route Service Layer | Completed | 2026-08-02 | `62262741682e247b667c384a147a37ddb44e1249` |
+| **SPEC-050** | Route Service Layer | Completed | 2026-08-02 | `5fc211d` |
+| **SPEC-051** | Route Controller Layer | Completed | 2026-08-02 | `bb7292fe4c2d0a911d430b7eaf126928cb5eae7c` |
