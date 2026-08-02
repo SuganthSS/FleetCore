@@ -1,9 +1,9 @@
 # FleetCore Authentication Foundation Architecture
 
-**SPEC ID**: SPEC-019  
+**SPEC ID**: SPEC-019 & SPEC-020  
 **Phase**: Phase 5 - Backend Foundation  
 **Module**: Authentication  
-**Title**: Authentication Foundation Documentation  
+**Title**: Authentication Foundation & Password Utility Documentation  
 **Date**: 2026-08-02  
 
 ---
@@ -38,11 +38,35 @@ backend/src/modules/auth/
 │   ├── auth.types.ts        # Foundational TypeScript type aliases (AuthTokenType, UserRoleName)
 │   └── index.ts             # Barrel export
 ├── utils/
-│   └── index.ts             # Password hashing and token generation helpers (Future SPECs)
+│   ├── password.util.ts     # Asynchronous password hashing, verification & strength evaluation
+│   └── index.ts             # Barrel export
 ├── validators/
 │   └── index.ts             # Request payload Zod validation schemas (Future SPECs)
 └── index.ts                 # Master barrel export for the auth module
 ```
+
+---
+
+## 🔒 Password Utility (`SPEC-020`)
+
+The password utility (`backend/src/modules/auth/utils/password.util.ts`) exposes three core asynchronous functions:
+
+### 1. `hashPassword(password: string): Promise<string>`
+- Asynchronously hashes plaintext passwords using `bcryptjs`.
+- Reads the salt cost factor dynamically from environment configuration (`config.bcryptRounds`, default `10`).
+
+### 2. `comparePassword(password: string, hash: string): Promise<boolean>`
+- Asynchronously compares candidate plaintext passwords against stored bcrypt hashes.
+- Mitigates timing attacks via bcrypt's constant-time comparison algorithm.
+
+### 3. `validatePasswordStrength(password: string): PasswordStrengthResult`
+- Evaluates password complexity against corporate security rules:
+  - Length between 8 and 128 characters
+  - Requires uppercase letter (`A-Z`)
+  - Requires lowercase letter (`a-z`)
+  - Requires numeric digit (`0-9`)
+  - Requires special character (`!@#$%^&*...`)
+- Returns a structured result: `{ isValid: boolean, score: number (0-5), errors: string[] }`.
 
 ---
 
@@ -62,11 +86,12 @@ Environment variables are validated strictly at application startup using Zod in
 
 ## 🗺️ Authentication Implementation Roadmap
 
-The authentication roadmap is broken down into clean, sequential specification specifications:
+The authentication roadmap is broken down into clean, sequential specifications:
 
 1. **SPEC-019 (Completed)**: Authentication Foundation (Directory structure, env validation, types, contracts, and constants).
-2. **SPEC-020 (Next)**: Password Hashing & JWT Utility Services (`bcryptjs` hashing and `jsonwebtoken` sign/verify wrappers).
-3. **SPEC-021**: Authentication Middleware & Guards (JWT verification middleware, `req.user` context binding, multi-tenancy `companyId` validation).
-4. **SPEC-022**: User Registration & Login API endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`).
-5. **SPEC-023**: Token Refresh & Logout API endpoints (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).
-6. **SPEC-024**: RBAC Permission Guard Middleware (`requireRole`, `requirePermission`).
+2. **SPEC-020 (Completed)**: Password Hashing & Strength Utility (`hashPassword`, `comparePassword`, `validatePasswordStrength`).
+3. **SPEC-021**: JWT Token Utilities & Verification Services (`jsonwebtoken` sign/verify wrappers).
+4. **SPEC-022**: Authentication Middleware & Guards (JWT verification middleware, `req.user` context binding).
+5. **SPEC-023**: User Registration & Login API endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`).
+6. **SPEC-024**: Token Refresh & Logout API endpoints (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).
+7. **SPEC-025**: RBAC Permission Guard Middleware (`requireRole`, `requirePermission`).

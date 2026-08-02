@@ -1,2 +1,1 @@
-// Utils directory placeholder export
-export {};
+export * from './password.util';

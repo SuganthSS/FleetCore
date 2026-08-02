@@ -30,4 +30,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-016** | Database Schema Audit | Completed | 2026-08-02 | `342c69c19b179ac3fb92bcb2c35b50356cd0b65a` |
 | **SPEC-017** | Initial Prisma Migration | Completed | 2026-08-02 | `19b3a269690e3389de1d461075bbfe97da63d08a` |
 | **SPEC-018** | Initial Seed Data | Completed | 2026-08-02 | `1503c85b21ddeceddd93c0fdcfe2288562e12a2f` |
-| **SPEC-019** | Authentication Foundation | Completed | 2026-08-02 | `3fc13496ca6905566f3cff41326b1f5c97c550d4` |
+| **SPEC-019** | Authentication Foundation | Completed | 2026-08-02 | `80e8c5e455b17e3c59f263c24f0e426fd2450f68` |
+| **SPEC-020** | Password Utility Module | Completed | 2026-08-02 | `ee37d82fa84677f00fef3d941a41cd51f04e2bff` |
