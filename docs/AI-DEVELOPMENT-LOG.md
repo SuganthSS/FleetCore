@@ -93,4 +93,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-078** | Notification Integration Testing & Production Hardening | Completed | 2026-08-02 | `c087cf6` |
 | **SPEC-079** | Dashboard Service Layer | Completed | 2026-08-02 | `f5bf15f` |
 | **SPEC-080** | Dashboard Controller Layer | Completed | 2026-08-02 | `84d7bfe` |
-| **SPEC-081** | Dashboard Routes Layer | Completed | 2026-08-02 | `88526fded628cc7d44e971eeeb54935e79cd49e9` |
+| **SPEC-081** | Dashboard Routes Layer | Completed | 2026-08-02 | `51b3401` |
+| **SPEC-082** | Dashboard Integration Testing & Production Hardening | Completed | 2026-08-02 | `4cbcc95a7252430e39e8c1ed5f43546b3f6bf01e` |
