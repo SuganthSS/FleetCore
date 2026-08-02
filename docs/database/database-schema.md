@@ -6,7 +6,7 @@ This document describes the database schema, models, field definitions, indexes,
 
 ## 🏢 Company Model
 
-The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, Trips, FuelRecords, MaintenanceRecords, LocationHistories, etc.) within FleetCore.
+The `Company` model represents the core organization entity that owns and manages all fleet resources (Vehicles, Drivers, Shipments, Users, Customers, Routes, Trips, FuelRecords, MaintenanceRecords, LocationHistories, Notifications, etc.) within FleetCore.
 
 ### Schema Definition
 
@@ -47,6 +47,7 @@ model Company {
   fuelRecords            FuelRecord[]
   maintenanceRecords     MaintenanceRecord[]
   locationHistories      VehicleLocationHistory[]
+  notifications          Notification[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -175,9 +176,10 @@ model User {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  company       Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  role          Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role          Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
   driverProfile Driver?
+  notifications Notification[]
 
   @@index([companyId])
   @@index([roleId])
@@ -1114,3 +1116,95 @@ model VehicleLocationHistory {
 - `vehicle`: `VehicleLocationHistory N -> 1 Vehicle` (`onDelete: Cascade`)
 - `driver`: `VehicleLocationHistory N -> 1 Driver` (`onDelete: Cascade`)
 - `trip`: `VehicleLocationHistory N -> 1 Trip` (`onDelete: Cascade`)
+
+---
+
+## 🔔 Notification Model
+
+The `Notification` model stores messages delivered to application users across the platform. It serves as persistent notification history for auditing, user inboxes, and system alerts.
+
+### Architectural Responsibility & Purpose
+
+> [!IMPORTANT]
+> **Purpose**: `Notification` stores message records (`title`, `message`, `type`, `priority`, `isRead`, `readAt`). It is a persistent notification log. It does **NOT** send notifications via email, SMS, or push notifications (delivery integrations will be implemented in future service modules).
+
+### Schema Definition
+
+```prisma
+enum NotificationType {
+  SYSTEM
+  TRIP_UPDATE
+  SHIPMENT_STATUS
+  MAINTENANCE_ALERT
+  FUEL_ALERT
+  SECURITY
+  CUSTOM
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+/// --------------------------------------------
+/// Notification
+/// Represents a message delivered to a user.
+/// Serves as persistent notification history.
+/// Does NOT perform email, SMS, or push delivery (handled via external services).
+/// --------------------------------------------
+model Notification {
+  id        String               @id @default(uuid())
+  title     String
+  message   String
+  type      NotificationType     @default(SYSTEM)
+  priority  NotificationPriority @default(MEDIUM)
+  isRead    Boolean              @default(false)
+  readAt    DateTime?
+  companyId String
+  userId    String
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([type])
+  @@index([priority])
+  @@index([isRead])
+  @@index([createdAt])
+}
+```
+
+### Fields
+
+| Field Name | Type | Modifiers | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `String` | `@id @default(uuid())` | Primary key (UUID v4) |
+| `title` | `String` | Required | Subject heading or title of notification |
+| `message` | `String` | Required | Full text content of notification body |
+| `type` | `NotificationType` | `@default(SYSTEM)` | Classification category (`SYSTEM`, `TRIP_UPDATE`, `SHIPMENT_STATUS`, `MAINTENANCE_ALERT`, `FUEL_ALERT`, `SECURITY`, `CUSTOM`) |
+| `priority` | `NotificationPriority` | `@default(MEDIUM)` | Urgency severity level (`LOW`, `MEDIUM`, `HIGH`, `URGENT`) |
+| `isRead` | `Boolean` | `@default(false)` | Flag indicating if user has read the message |
+| `readAt` | `DateTime` | Optional | Timestamp when message was marked as read |
+| `companyId` | `String` | Foreign Key | References parent `Company.id` |
+| `userId` | `String` | Foreign Key | References recipient `User.id` |
+| `createdAt` | `DateTime` | `@default(now())` | Creation timestamp |
+| `updatedAt` | `DateTime` | `@updatedAt` | Modification timestamp |
+
+### Indexes
+
+- `@@index([companyId])`: Multi-tenant notification querying.
+- `@@index([userId])`: User inbox retrieval and unread count queries.
+- `@@index([type])`: Filtering notifications by domain event category.
+- `@@index([priority])`: Urgent notification routing and alert banners.
+- `@@index([isRead])`: Unread notification filter.
+- `@@index([createdAt])`: Chronological inbox sorting.
+
+### Relationships
+
+- `company`: `Notification N -> 1 Company` (`onDelete: Cascade`)
+- `user`: `Notification N -> 1 User` (`onDelete: Cascade`)

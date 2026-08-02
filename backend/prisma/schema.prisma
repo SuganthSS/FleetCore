@@ -138,6 +138,23 @@ enum MaintenanceStatus {
   OVERDUE
 }
 
+enum NotificationType {
+  SYSTEM
+  TRIP_UPDATE
+  SHIPMENT_STATUS
+  MAINTENANCE_ALERT
+  FUEL_ALERT
+  SECURITY
+  CUSTOM
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 model Company {
   id                 String        @id @default(uuid())
   name               String
@@ -167,6 +184,7 @@ model Company {
   fuelRecords        FuelRecord[]
   maintenanceRecords MaintenanceRecord[]
   locationHistories  VehicleLocationHistory[]
+  notifications      Notification[]
 
   @@index([name])
   @@index([registrationNumber])
@@ -238,11 +256,12 @@ model User {
   updatedAt     DateTime   @updatedAt
 
   /// Parent Company relation
-  company       Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   /// Assigned Role relation
-  role          Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  role          Role           @relation(fields: [roleId], references: [id], onDelete: Restrict)
   /// Optional Driver profile extension
   driverProfile Driver?
+  notifications Notification[]
 
   @@index([companyId])
   @@index([roleId])
@@ -764,5 +783,48 @@ model VehicleLocationHistory {
   @@index([driverId])
   @@index([tripId])
   @@index([recordedAt])
+  @@index([createdAt])
+}
+
+/// --------------------------------------------
+/// Notification
+/// Represents a message delivered to a user.
+/// Serves as persistent notification history.
+/// Does NOT perform email, SMS, or push delivery (handled via external services).
+/// --------------------------------------------
+model Notification {
+  /// Primary key UUID
+  id        String               @id @default(uuid())
+  /// Title / subject heading of the notification
+  title     String
+  /// Full message content text of the notification
+  message   String
+  /// Notification domain category classification
+  type      NotificationType     @default(SYSTEM)
+  /// Priority / severity level of the notification
+  priority  NotificationPriority @default(MEDIUM)
+  /// Flag indicating whether the notification has been read by the user
+  isRead    Boolean              @default(false)
+  /// Timestamp when the notification was marked as read
+  readAt    DateTime?
+  /// Foreign key referencing parent Company
+  companyId String
+  /// Foreign key referencing recipient User
+  userId    String
+  /// Creation timestamp
+  createdAt DateTime             @default(now())
+  /// Last modification timestamp
+  updatedAt DateTime             @updatedAt
+
+  /// Parent Company relation
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  /// Recipient User relation
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([type])
+  @@index([priority])
+  @@index([isRead])
   @@index([createdAt])
 }
