@@ -48,4 +48,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-033** | Vehicle Module Integration Testing | Completed | 2026-08-02 | `3f96cc52c7c6e0a48d5d92cf43252086a8fef8fa` |
 | **SPEC-034** | Driver Validation Layer | Completed | 2026-08-02 | `f0a274294e88cf4a87b468f939e91e9b500e4fd1` |
 | **SPEC-035** | Driver Service Layer | Completed | 2026-08-02 | `ab66fceb57e8dac9a3fdec92471061da52216bf2` |
-| **SPEC-036** | Driver Controller Layer | Completed | 2026-08-02 | `926b8a50c88128078cb97ab2d04b0f7aba889971` |
+| **SPEC-036** | Driver Controller Layer | Completed | 2026-08-02 | `cc0d3d4c6bdb51456e27600508fb44cfa9ccbce6` |
+| **SPEC-037** | Driver Routes | Completed | 2026-08-02 | `d2271ecef40a9037f2af53d3ce0255cf82643da5` |

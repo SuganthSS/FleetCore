@@ -2,7 +2,21 @@
 
 **Module**: Driver Management (`backend/src/modules/driver`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation, Service & Controller Layers Implemented  
+**Status**: Full Module Implemented (Validation, Service, Controller & Routes)  
+
+---
+
+## 🛣️ Driver REST API Endpoints (`/api/v1/drivers`)
+
+All Driver endpoints require a valid Bearer JWT access token via `authenticate()` middleware.
+
+| HTTP Method | Endpoint Path | Description | Allowed Roles (`authorize`) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/drivers` | List drivers (Paginated, Search, Filter, Sort) | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `GET` | `/api/v1/drivers/:id` | Get single driver profile by UUID | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `POST` | `/api/v1/drivers` | Create a new driver profile | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `PUT` | `/api/v1/drivers/:id` | Update an existing driver profile by UUID | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `DELETE` | `/api/v1/drivers/:id` | Delete a driver profile by UUID | `Super Admin`, `Company Admin` |
 
 ---
 
@@ -116,6 +130,7 @@ HTTP Request ➔ Express Router (/api/v1/drivers) ➔ Auth/RBAC Middleware ➔ D
 
 ```typescript
 import {
+  driverRoutes,
   driverController,
   driverService,
   CreateDriverInput,

@@ -9,6 +9,7 @@ import { errorHandler } from './middlewares/errorHandler';
 import healthRoutes from './routes/health.routes';
 import { authRoutes } from './modules/auth';
 import { vehicleRoutes } from './modules/vehicle';
+import { driverRoutes } from './modules/driver';
 import { initSocket } from './socket';
 
 const app: Application = express();
@@ -36,6 +37,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use('/api/v1', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/vehicles', vehicleRoutes);
+app.use('/api/v1/drivers', driverRoutes);
 
 // Error Handling Middleware
 app.use(errorHandler);
