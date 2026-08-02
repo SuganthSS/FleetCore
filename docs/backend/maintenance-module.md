@@ -2,7 +2,7 @@
 
 **Module**: Maintenance Management (`backend/src/modules/maintenance`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation & Service Layers Implemented  
+**Status**: Validation, Service & Controller Layers Implemented  
 
 ---
 
@@ -80,10 +80,37 @@ The `MaintenanceService` class manages vehicle maintenance work order lifecycle 
 
 ---
 
+## 🎮 Maintenance Controller Layer (`controllers/maintenance.controller.ts`)
+
+The `MaintenanceController` layer processes HTTP requests, validates inputs using Zod, extracts authenticated tenant context (`companyId`), and maps service outputs/errors into standardized JSON responses.
+
+### HTTP Status Code Mapping
+
+| Status Code | Description | Scenario |
+| :--- | :--- | :--- |
+| **200 OK** | Success | Querying, updating, or deleting maintenance work orders |
+| **201 Created** | Created | Successfully creating maintenance work order |
+| **400 Bad Request** | Validation Error | Payload/Query/Params validation failure |
+| **404 Not Found** | Resource Not Found | Maintenance/Vehicle/Driver/Company not found, cross-tenant access |
+| **500 Error** | Internal Server Error | Unhandled server error |
+
+### Request Lifecycle
+
+```text
+HTTP Request
+  → Zod safeParse (params/query/body)
+  → Extract req.authenticatedUser.companyId
+  → maintenanceService method()
+  → Standardized JSON response
+```
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  maintenanceController,
   maintenanceService,
   createMaintenanceSchema,
   updateMaintenanceSchema,
@@ -96,4 +123,5 @@ import {
   PaginatedMaintenanceResult,
 } from './modules/maintenance';
 ```
+
 

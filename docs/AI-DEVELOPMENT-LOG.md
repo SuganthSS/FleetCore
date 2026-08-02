@@ -77,4 +77,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-062** | Fuel Routes Layer | Completed | 2026-08-02 | `9280138` |
 | **SPEC-063** | Fuel Integration Testing & Production Hardening | Completed | 2026-08-02 | `68aa1f5` |
 | **SPEC-064** | Maintenance Validation Layer | Completed | 2026-08-02 | `e4e3376` |
-| **SPEC-065** | Maintenance Service Layer | Completed | 2026-08-02 | `50ecab237fc0a24597746606fe52a81b922b26c9` |
+| **SPEC-065** | Maintenance Service Layer | Completed | 2026-08-02 | `1dae03a` |
+| **SPEC-066** | Maintenance Controller Layer | Completed | 2026-08-02 | `23aaa19bcc1c7b5797244899abcd7b5ac36986cc` |
