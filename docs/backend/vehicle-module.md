@@ -2,7 +2,7 @@
 
 **Module**: Vehicle Management (`backend/src/modules/vehicle`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation Layer Implemented  
+**Status**: Service & Validation Layers Implemented  
 
 ---
 
@@ -46,6 +46,45 @@ Validates query params for filtering and paginating vehicle listings.
 
 ---
 
+## ⚙️ Vehicle Service Layer (`services/vehicle.service.ts`)
+
+The `VehicleService` class provides framework-independent CRUD operations and business rules.
+
+### Service Methods
+
+#### `createVehicle(input: CreateVehicleInput): Promise<Vehicle>`
+- **Business Rules**:
+  1. Verifies parent `Company` exists via `companyId`.
+  2. Ensures `registrationNumber` is unique across all vehicles.
+  3. Ensures `vin` is unique across all vehicles.
+- **Return**: Full created `Vehicle` Prisma record.
+
+#### `getVehicleById(id: string): Promise<Vehicle>`
+- **Business Rules**:
+  1. Fetches vehicle by UUID including basic company metadata.
+  2. Throws error if record is not found (`Vehicle with ID '...' not found.`).
+
+#### `getVehicles(query: VehicleQueryInput, companyId?: string): Promise<PaginatedVehicleResult>`
+- **Business Rules**:
+  1. Applies pagination (`page`, `limit`, `skip`).
+  2. Filters by `status`, `vehicleType`, `fuelType`, and `companyId` (for multi-tenant scoping).
+  3. Performs case-insensitive search across `registrationNumber`, `vin`, `make`, and `model`.
+  4. Returns structured metadata: `{ items, total, page, limit, totalPages }`.
+
+#### `updateVehicle(id: string, input: UpdateVehicleInput): Promise<Vehicle>`
+- **Business Rules**:
+  1. Ensures target vehicle exists.
+  2. If `registrationNumber` is changed, checks for duplicate registration.
+  3. If `vin` is changed, checks for duplicate VIN.
+- **Return**: Updated `Vehicle` record.
+
+#### `deleteVehicle(id: string): Promise<Vehicle>`
+- **Business Rules**:
+  1. Ensures target vehicle exists.
+  2. Executes physical delete in Prisma database.
+
+---
+
 ## 🏷️ Exported TypeScript Types
 
 ```typescript
@@ -54,5 +93,7 @@ import {
   UpdateVehicleInput,
   VehicleIdInput,
   VehicleQueryInput,
-} from './validators/vehicle.validator';
+  PaginatedVehicleResult,
+  vehicleService,
+} from './modules/vehicle';
 ```

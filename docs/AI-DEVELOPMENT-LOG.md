@@ -41,4 +41,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-027** | Authentication Routes | Completed | 2026-08-02 | `6c405adcd908f1d3fc9d4ea03aae6d1019d34211` |
 | **SPEC-027A** | Authentication Integration Testing | Completed | 2026-08-02 | `4a5450aea7ecd93b49490cfec9ba1cced766faf3` |
 | **SPEC-028** | Login Endpoint Verification & Hardening | Completed | 2026-08-02 | `fc3f736548b44375edea09ebca0a4608d0cd44a3` |
-| **SPEC-029** | Vehicle Validation Layer | Completed | 2026-08-02 | `6f85020497ffd6a92b78de651ce8858abff7ab6f` |
+| **SPEC-029** | Vehicle Validation Layer | Completed | 2026-08-02 | `ad82b8ce9ab4db6ab2526143cc0bc99285506247` |
+| **SPEC-030** | Vehicle Service Layer | Completed | 2026-08-02 | `b80383aee41dd863184f8374b7a8b41a7e1e5d1e` |
