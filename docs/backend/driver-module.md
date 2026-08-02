@@ -2,7 +2,7 @@
 
 **Module**: Driver Management (`backend/src/modules/driver`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation Layer Implemented  
+**Status**: Validation & Service Layers Implemented  
 
 ---
 
@@ -37,7 +37,7 @@ Validates path parameters for single-driver operations (e.g., `GET /api/v1/drive
 Validates query params for filtering, searching, sorting, and paginating driver listings.
 - `page`: Optional integer $\ge 1$ (default: `1`).
 - `limit`: Optional integer $1 \le limit \le 100$ (default: `10`).
-- `search`: Optional search string (searches `employeeId` and `licenseNumber`).
+- `search`: Optional search string (searches `employeeId`, `licenseNumber`, `User.firstName`, `User.lastName`, `User.email`).
 - `availability`: Optional `DriverAvailability` enum filter.
 - `experienceLevel`: Optional `ExperienceLevel` enum filter.
 - `companyId`: Optional valid UUID filter.
@@ -46,13 +46,39 @@ Validates query params for filtering, searching, sorting, and paginating driver 
 
 ---
 
-## 🏷️ Exported TypeScript Types
+## ⚙️ Driver Service Layer (`services/driver.service.ts`)
+
+The `DriverService` class provides framework-independent CRUD operations and business rules.
+
+### Business Rules & Tenant Isolation
+1. **`createDriver(input: CreateDriverInput)`**:
+   - Validates existence of parent `Company` and target `User`.
+   - Ensures `User` belongs to the specified `Company`.
+   - Prevents duplicate `employeeId`, `licenseNumber`, or double-assignment of `userId`.
+2. **`getDriverById(id: string, companyId?: string)`**:
+   - Retrieves driver record by UUID, including associated `User` profile and `Company` metadata.
+   - Enforces multi-tenant isolation by scoping queries with `companyId`.
+3. **`getDrivers(query: DriverQueryInput, companyId?: string)`**:
+   - Supports paginated listing with total counts and total pages.
+   - Enforces company isolation via `companyId`.
+   - Performs case-insensitive search across `employeeId`, `licenseNumber`, `User.firstName`, `User.lastName`, and `User.email`.
+4. **`updateDriver(id: string, input: UpdateDriverInput, companyId?: string)`**:
+   - Verifies driver exists and enforces multi-tenant boundary.
+   - Checks uniqueness of updated `employeeId`, `licenseNumber`, and `userId`.
+5. **`deleteDriver(id: string, companyId?: string)`**:
+   - Verifies driver exists within company tenant boundary before hard deletion.
+
+---
+
+## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  driverService,
   CreateDriverInput,
   UpdateDriverInput,
   DriverIdInput,
   DriverQueryInput,
+  PaginatedDriverResult,
 } from './modules/driver';
 ```
