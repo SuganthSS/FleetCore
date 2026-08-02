@@ -1,9 +1,9 @@
 # FleetCore Authentication Foundation Architecture
 
-**SPEC ID**: SPEC-019, SPEC-020, SPEC-021, SPEC-022  
+**SPEC ID**: SPEC-019, SPEC-020, SPEC-021, SPEC-022, SPEC-023  
 **Phase**: Phase 5 - Backend Foundation  
 **Module**: Authentication  
-**Title**: Authentication Foundation, Utilities & Middleware Documentation  
+**Title**: Authentication Foundation, Utilities & RBAC Middleware Documentation  
 **Date**: 2026-08-02  
 
 ---
@@ -30,6 +30,7 @@ backend/src/modules/auth/
 │   └── index.ts             # Barrel export
 ├── middlewares/
 │   ├── auth.middleware.ts   # Express authentication middleware (Bearer token verification & req context binding)
+│   ├── rbac.middleware.ts   # Role-based access control middleware (Permission evaluation)
 │   └── index.ts             # Barrel export
 ├── routes/
 │   └── index.ts             # Express router definitions (Future SPECs)
@@ -49,47 +50,62 @@ backend/src/modules/auth/
 
 ---
 
+## 🔄 Middleware Execution Lifecycle
+
+FleetCore enforces a strict two-stage security middleware execution order:
+
+```text
+       Incoming HTTP Request
+                 │
+                 ▼
+       ┌───────────────────┐
+       │   authenticate()  │  ---> Verifies Bearer JWT signature & expiration.
+       └─────────┬─────────┘       Attaches req.authenticatedUser context.
+                 │
+                 ▼
+       ┌───────────────────┐
+       │ authorize(...roles)│ ---> Evaluates req.authenticatedUser.roleName.
+       └─────────┬─────────┘       Enforces RBAC permissions without re-verifying JWT.
+                 │
+                 ▼
+       ┌───────────────────┐
+       │ Route Controller  │ ---> Executes business logic for authorized requests.
+       └───────────────────┘
+```
+
+---
+
+## 👑 Role-Based Access Control (RBAC) Middleware (`SPEC-023`)
+
+The RBAC middleware (`backend/src/modules/auth/middlewares/rbac.middleware.ts`) exposes the `authorize(...allowedRoles)` higher-order function:
+
+### Flow & Responsibilities
+1. **Context Inspection**: Checks for `req.authenticatedUser` created by `authenticate()`.
+   - If missing, responds HTTP `401 Unauthorized` (`UNAUTHENTICATED_CONTEXT_MISSING`).
+2. **Role Comparison**: Compares `req.authenticatedUser.roleName` (or `roleId`) against the array of `allowedRoles`.
+   - Reuses `UserRoleName` type (`'Super Admin'`, `'Company Admin'`, `'Fleet Manager'`, `'Dispatcher'`, `'Driver'`).
+   - If role is not allowed, responds HTTP `403 Forbidden` (`INSUFFICIENT_PERMISSIONS`).
+3. **Dispatch**: Calls `next()` if user has sufficient privileges.
+
+---
+
 ## 🛡️ Authentication Middleware (`SPEC-022`)
 
-The authentication middleware (`backend/src/modules/auth/middlewares/auth.middleware.ts`) exposes the `authenticate` middleware function.
-
-### Request Verification Lifecycle & Error Responses
-1. **Header Inspection**: Reads `Authorization` header (`AUTH_CONSTANTS.HEADERS.AUTHORIZATION`).
-   - If missing, responds HTTP `401 Unauthorized` (`MISSING_AUTHORIZATION_HEADER`).
-2. **Format Validation**: Validates `Bearer <token>` string prefix (`AUTH_CONSTANTS.HEADERS.BEARER_PREFIX`).
-   - If malformed prefix or empty token string, responds HTTP `401 Unauthorized` (`INVALID_BEARER_FORMAT` or `EMPTY_TOKEN`).
-3. **JWT Verification**: Calls `verifyAccessToken(token)` from JWT utility.
-   - If expired, responds HTTP `401 Unauthorized` (`TOKEN_EXPIRED`).
-   - If malformed, responds HTTP `401 Unauthorized` (`TOKEN_MALFORMED`).
-   - If invalid signature/claims, responds HTTP `401 Unauthorized` (`INVALID_TOKEN`).
-4. **Request Context Binding**: Extracted claims (`sub`, `email`, `companyId`, `roleId`) are structured into an `AuthenticatedUser` object and attached directly to `req.authenticatedUser`.
-5. **Next Dispatch**: Calls `next()` to hand execution over to downstream routers/controllers.
+The authentication middleware (`backend/src/modules/auth/middlewares/auth.middleware.ts`) exposes `authenticate`:
+- **Header Inspection**: Reads `Authorization` header (`Bearer <token>`).
+- **JWT Verification**: Verifies signature & expiration via `verifyAccessToken(token)`.
+- **Request Context**: Attaches user claims to `req.authenticatedUser`.
 
 ---
 
-## 🔒 Password Utility (`SPEC-020`)
+## 🔒 Password Utility (`SPEC-020`) & 🎟️ JWT Utility (`SPEC-021`)
 
-The password utility (`backend/src/modules/auth/utils/password.util.ts`) exposes three core asynchronous functions:
-- **`hashPassword(password: string)`**: Hashes plaintext passwords using `bcryptjs` and dynamic salt rounds (`config.bcryptRounds`, default `10`).
-- **`comparePassword(password: string, hash: string)`**: Verifies candidate plaintext passwords against stored hashes in constant time.
-- **`validatePasswordStrength(password: string)`**: Evaluates password complexity (8-128 chars, uppercase, lowercase, digit, special character).
-
----
-
-## 🎟️ JWT Utility (`SPEC-021`)
-
-The JWT utility (`backend/src/modules/auth/utils/jwt.util.ts`) manages token generation, verification, and decoding:
-- **`generateAccessToken(payload)`**: Signs Access JWTs using `config.jwtSecret`.
-- **`generateRefreshToken(payload)`**: Signs Refresh JWTs using `config.jwtRefreshSecret`.
-- **`verifyAccessToken(token)`**: Verifies Access JWT signature & claims.
-- **`verifyRefreshToken(token)`**: Verifies Refresh JWT signature & claims.
-- **`decodeToken<T>(token)`**: Decodes token payload without signature verification.
+- **Password Utilities**: `hashPassword`, `comparePassword`, `validatePasswordStrength`.
+- **JWT Utilities**: `generateAccessToken`, `generateRefreshToken`, `verifyAccessToken`, `verifyRefreshToken`, `decodeToken`.
 
 ---
 
 ## 🔑 Environment Variables
-
-Environment variables are validated strictly at application startup using Zod in `backend/src/config/env.ts`.
 
 | Variable Name | Required | Default Value | Description |
 | :--- | :--- | :--- | :--- |
@@ -103,12 +119,10 @@ Environment variables are validated strictly at application startup using Zod in
 
 ## 🗺️ Authentication Implementation Roadmap
 
-The authentication roadmap is broken down into clean, sequential specifications:
-
-1. **SPEC-019 (Completed)**: Authentication Foundation (Directory structure, env validation, types, contracts, and constants).
-2. **SPEC-020 (Completed)**: Password Hashing & Strength Utility (`hashPassword`, `comparePassword`, `validatePasswordStrength`).
-3. **SPEC-021 (Completed)**: JWT Utilities (`generateAccessToken`, `generateRefreshToken`, `verifyAccessToken`, `verifyRefreshToken`, `decodeToken`).
-4. **SPEC-022 (Completed)**: Authentication Middleware & Context Guards (`authenticate` middleware, `req.authenticatedUser` binding).
-5. **SPEC-023**: User Registration & Login API endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`).
-6. **SPEC-024**: Token Refresh & Logout API endpoints (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).
-7. **SPEC-025**: RBAC Permission Guard Middleware (`requireRole`, `requirePermission`).
+1. **SPEC-019 (Completed)**: Authentication Foundation.
+2. **SPEC-020 (Completed)**: Password Hashing & Strength Utility.
+3. **SPEC-021 (Completed)**: JWT Utilities.
+4. **SPEC-022 (Completed)**: Authentication Middleware (`authenticate`).
+5. **SPEC-023 (Completed)**: RBAC Middleware (`authorize`).
+6. **SPEC-024**: User Registration & Login API endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`).
+7. **SPEC-025**: Token Refresh & Logout API endpoints (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).
