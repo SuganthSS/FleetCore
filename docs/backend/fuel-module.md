@@ -2,7 +2,7 @@
 
 **Module**: Fuel Management (`backend/src/modules/fuel`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation, Service & Controller Layers Implemented  
+**Status**: Fully Implemented (Validation, Service, Controller & Routes)  
 
 ---
 
@@ -103,10 +103,32 @@ HTTP Request
 
 ---
 
+## 🛣️ Routes & RBAC Matrix (`routes/fuel.routes.ts`)
+
+Base Route: `/api/v1/fuel`
+
+### Middleware Execution Chain
+```text
+HTTP Request ➔ authenticate() ➔ authorize(...roles) ➔ FuelController handler
+```
+
+### Endpoints Table & Allowed Roles
+
+| HTTP Method | Path | Description | Allowed Roles (`authorize`) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/fuel` | List fuel records (Paginated, Search, Filter, Sort) | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `GET` | `/api/v1/fuel/:id` | Retrieve single fuel record by UUID | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `POST` | `/api/v1/fuel` | Record a vehicle refueling event | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `PUT` | `/api/v1/fuel/:id` | Update an existing fuel record by UUID | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `DELETE` | `/api/v1/fuel/:id` | Delete a fuel record by UUID | `Super Admin`, `Company Admin` |
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  fuelRoutes,
   fuelController,
   fuelService,
   createFuelRecordSchema,
