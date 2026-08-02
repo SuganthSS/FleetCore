@@ -93,6 +93,13 @@ export class ShipmentService {
             name: true,
           },
         },
+        trips: {
+          select: {
+            id: true,
+            tripNumber: true,
+            status: true,
+          },
+        },
       },
     });
 
@@ -127,6 +134,13 @@ export class ShipmentService {
           select: {
             id: true,
             name: true,
+          },
+        },
+        trips: {
+          select: {
+            id: true,
+            tripNumber: true,
+            status: true,
           },
         },
       },
@@ -213,6 +227,13 @@ export class ShipmentService {
             select: {
               id: true,
               name: true,
+            },
+          },
+          trips: {
+            select: {
+              id: true,
+              tripNumber: true,
+              status: true,
             },
           },
         },
@@ -329,6 +350,13 @@ export class ShipmentService {
           select: {
             id: true,
             name: true,
+          },
+        },
+        trips: {
+          select: {
+            id: true,
+            tripNumber: true,
+            status: true,
           },
         },
       },

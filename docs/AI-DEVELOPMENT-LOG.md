@@ -101,6 +101,8 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-086** | Vehicles Management Page | Completed | 2026-08-02 | `0f45ac7e553e3e47185ccbfda692117460b58540` |
 | **SPEC-087** | Drivers Management Page | Completed | 2026-08-02 | `bf58d3829ca8de91a1fbd41122c62097e181a363` |
 | **SPEC-088** | Customers Management Page | Completed | 2026-08-02 | `a6d333585444b5d4d5de3909d6d159f3128121e2` |
+| **SPEC-089** | Shipments Management Page | Completed | 2026-08-02 | `in-progress` |
+
 
 
 
