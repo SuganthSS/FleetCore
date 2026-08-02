@@ -66,7 +66,8 @@ export class VehicleController {
     }
 
     try {
-      const vehicle = await vehicleService.getVehicleById(paramResult.data.id);
+      const companyId = req.authenticatedUser?.companyId;
+      const vehicle = await vehicleService.getVehicleById(paramResult.data.id, companyId);
       res.status(200).json({
         success: true,
         data: vehicle,
@@ -144,9 +145,11 @@ export class VehicleController {
     }
 
     try {
+      const companyId = req.authenticatedUser?.companyId;
       const updatedVehicle = await vehicleService.updateVehicle(
         paramResult.data.id,
-        bodyResult.data
+        bodyResult.data,
+        companyId
       );
 
       res.status(200).json({
@@ -188,7 +191,8 @@ export class VehicleController {
     }
 
     try {
-      await vehicleService.deleteVehicle(paramResult.data.id);
+      const companyId = req.authenticatedUser?.companyId;
+      await vehicleService.deleteVehicle(paramResult.data.id, companyId);
       res.status(200).json({
         success: true,
         message: 'Vehicle deleted successfully',

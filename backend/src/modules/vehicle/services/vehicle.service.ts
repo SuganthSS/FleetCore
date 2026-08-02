@@ -63,14 +63,20 @@ export class VehicleService {
   }
 
   /**
-   * Retrieves a single Vehicle by its unique UUID.
+   * Retrieves a single Vehicle by its unique UUID and optional companyId for tenant isolation.
    *
    * @param id Vehicle UUID
+   * @param companyId Optional company tenant isolation filter
    * @returns Found Vehicle record
    */
-  async getVehicleById(id: string): Promise<Vehicle> {
-    const vehicle = await prisma.vehicle.findUnique({
-      where: { id },
+  async getVehicleById(id: string, companyId?: string): Promise<Vehicle> {
+    const where: Prisma.VehicleWhereInput = { id };
+    if (companyId) {
+      where.companyId = companyId;
+    }
+
+    const vehicle = await prisma.vehicle.findFirst({
+      where,
       include: {
         company: {
           select: {
@@ -163,16 +169,15 @@ export class VehicleService {
    *
    * @param id Vehicle UUID to update
    * @param input Data fields to update
+   * @param companyId Optional company tenant isolation filter
    * @returns Updated Vehicle record
    */
-  async updateVehicle(id: string, input: UpdateVehicleInput): Promise<Vehicle> {
-    const existingVehicle = await prisma.vehicle.findUnique({
-      where: { id },
-    });
-
-    if (!existingVehicle) {
-      throw new Error(`Vehicle with ID '${id}' not found.`);
-    }
+  async updateVehicle(
+    id: string,
+    input: UpdateVehicleInput,
+    companyId?: string
+  ): Promise<Vehicle> {
+    const existingVehicle = await this.getVehicleById(id, companyId);
 
     if (
       input.registrationNumber &&
@@ -198,7 +203,7 @@ export class VehicleService {
     }
 
     const updatedVehicle = await prisma.vehicle.update({
-      where: { id },
+      where: { id: existingVehicle.id },
       data: {
         registrationNumber: input.registrationNumber,
         vin: input.vin,
@@ -219,19 +224,14 @@ export class VehicleService {
    * Hard deletes a vehicle record by ID.
    *
    * @param id Vehicle UUID to delete
+   * @param companyId Optional company tenant isolation filter
    * @returns Deleted Vehicle record
    */
-  async deleteVehicle(id: string): Promise<Vehicle> {
-    const existingVehicle = await prisma.vehicle.findUnique({
-      where: { id },
-    });
-
-    if (!existingVehicle) {
-      throw new Error(`Vehicle with ID '${id}' not found.`);
-    }
+  async deleteVehicle(id: string, companyId?: string): Promise<Vehicle> {
+    const existingVehicle = await this.getVehicleById(id, companyId);
 
     return await prisma.vehicle.delete({
-      where: { id },
+      where: { id: existingVehicle.id },
     });
   }
 }
