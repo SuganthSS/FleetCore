@@ -106,6 +106,8 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-091** | Trips Management Page | Completed | 2026-08-02 | `7171b508ec877e99f04e5e2daab97cb7d3c75405` |
 | **SPEC-092** | Fuel Management Page | Completed | 2026-08-02 | `0fd07be6e6d380fcbb1762a4fff0c5e2423a8ab7` |
 | **SPEC-093** | Maintenance Management Page | Completed | 2026-08-02 | `06cd330f40fb0202dbc855aa32dd4e0d0607c1f3` |
+| **SPEC-094** | Tracking Management Page | Completed | 2026-08-02 | `in-progress` |
+
 
 
 

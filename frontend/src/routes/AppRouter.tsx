@@ -13,7 +13,9 @@ import { RoutesPage } from '@/pages/RoutesPage';
 import { TripsPage } from '@/pages/TripsPage';
 import { FuelPage } from '@/pages/FuelPage';
 import { MaintenancePage } from '@/pages/MaintenancePage';
+import { TrackingPage } from '@/pages/TrackingPage';
 import { LoginPage } from '@/pages/LoginPage';
+
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 
@@ -85,8 +87,13 @@ const router = createBrowserRouter([
             path: '/maintenance',
             element: <MaintenancePage />,
           },
+          {
+            path: '/tracking',
+            element: <TrackingPage />,
+          },
         ],
       },
+
 
 
 

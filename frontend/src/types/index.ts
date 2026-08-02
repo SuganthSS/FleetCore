@@ -9,3 +9,5 @@ export * from './route';
 export * from './trip';
 export * from './fuel';
 export * from './maintenance';
+export * from './tracking';
+
