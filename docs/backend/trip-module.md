@@ -2,7 +2,7 @@
 
 **Module**: Trip Management (`backend/src/modules/trip`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation, Service & Controller Layers Implemented  
+**Status**: Fully Implemented (Validation, Service, Controller & Routes)  
 
 ---
 
@@ -105,10 +105,32 @@ HTTP Request
 
 ---
 
+## 🛣️ Routes & RBAC Matrix (`routes/trip.routes.ts`)
+
+Base Route: `/api/v1/trips`
+
+### Middleware Execution Chain
+```text
+HTTP Request ➔ authenticate() ➔ authorize(...roles) ➔ TripController handler
+```
+
+### Endpoints Table & Allowed Roles
+
+| HTTP Method | Path | Description | Allowed Roles (`authorize`) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/trips` | List trips (Paginated, Search, Filter, Sort) | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `GET` | `/api/v1/trips/:id` | Retrieve single trip execution by UUID | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `POST` | `/api/v1/trips` | Create a new trip execution | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `PUT` | `/api/v1/trips/:id` | Update an existing trip execution by UUID | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `DELETE` | `/api/v1/trips/:id` | Delete a trip execution by UUID | `Super Admin`, `Company Admin` |
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  tripRoutes,
   tripController,
   tripService,
   createTripSchema,

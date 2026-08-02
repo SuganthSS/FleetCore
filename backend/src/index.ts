@@ -13,6 +13,7 @@ import { driverRoutes } from './modules/driver';
 import { customerRoutes } from './modules/customer';
 import { shipmentRoutes } from './modules/shipment';
 import { routeRoutes } from './modules/route';
+import { tripRoutes } from './modules/trip';
 import { initSocket } from './socket';
 
 const app: Application = express();
@@ -44,6 +45,7 @@ app.use('/api/v1/drivers', driverRoutes);
 app.use('/api/v1/customers', customerRoutes);
 app.use('/api/v1/shipments', shipmentRoutes);
 app.use('/api/v1/routes', routeRoutes);
+app.use('/api/v1/trips', tripRoutes);
 
 // Error Handling Middleware
 app.use(errorHandler);
