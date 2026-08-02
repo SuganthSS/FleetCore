@@ -7,6 +7,7 @@ import { config } from './config/env';
 import { logger } from './utils/logger';
 import { errorHandler } from './middlewares/errorHandler';
 import healthRoutes from './routes/health.routes';
+import { authRoutes } from './modules/auth';
 import { initSocket } from './socket';
 
 const app: Application = express();
@@ -32,6 +33,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Routes
 app.use('/api/v1', healthRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 // Error Handling Middleware
 app.use(errorHandler);

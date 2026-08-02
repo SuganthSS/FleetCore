@@ -1,16 +1,16 @@
 # FleetCore Authentication Foundation Architecture
 
-**SPEC ID**: SPEC-019, SPEC-020, SPEC-021, SPEC-022, SPEC-023, SPEC-024, SPEC-025, SPEC-026  
+**SPEC ID**: SPEC-019, SPEC-020, SPEC-021, SPEC-022, SPEC-023, SPEC-024, SPEC-025, SPEC-026, SPEC-027  
 **Phase**: Phase 5 - Backend Authentication  
 **Module**: Authentication  
-**Title**: Authentication Foundation, Security Utilities, Middleware, Validation, Service & Controller Documentation  
+**Title**: Authentication Foundation, Security Utilities, Middleware, Validation, Service, Controller & Routing Documentation  
 **Date**: 2026-08-02  
 
 ---
 
 ## 🏗️ Architecture Overview
 
-The `auth` module provides the architectural blueprint and foundational layer for all identity, authentication, session management, and RBAC operations within FleetCore. It adheres to modular domain design principles, isolating authentication configuration, contracts, interfaces, utilities, middlewares, validation schemas, business services, and HTTP controllers.
+The `auth` module provides the architectural blueprint and foundational layer for all identity, authentication, session management, and RBAC operations within FleetCore. It adheres to modular domain design principles, isolating authentication configuration, contracts, interfaces, utilities, middlewares, validation schemas, business services, HTTP controllers, and Express route definitions.
 
 ---
 
@@ -34,7 +34,8 @@ backend/src/modules/auth/
 │   ├── rbac.middleware.ts   # Role-based access control middleware (Permission evaluation)
 │   └── index.ts             # Barrel export
 ├── routes/
-│   └── index.ts             # Express router definitions (Future SPECs)
+│   ├── auth.routes.ts       # Express router definitions for authentication endpoints
+│   └── index.ts             # Barrel export
 ├── services/
 │   ├── auth.service.ts      # Domain business logic for authentication & user identity
 │   └── index.ts             # Barrel export
@@ -53,50 +54,28 @@ backend/src/modules/auth/
 
 ---
 
+## 🚦 Authentication Routes (`SPEC-027`)
+
+Authentication routes are registered under the `/api/v1/auth` sub-path in `backend/src/index.ts`.
+
+### Endpoint Definitions & Access Policies
+
+| Endpoint Path | HTTP Method | Access Level | Applied Middleware | Controller Method |
+| :--- | :--- | :--- | :--- | :--- |
+| `/api/v1/auth/login` | `POST` | Public | None | `authController.login` |
+| `/api/v1/auth/refresh` | `POST` | Public | None | `authController.refreshToken` |
+| `/api/v1/auth/forgot-password` | `POST` | Public | None | `authController.forgotPassword` |
+| `/api/v1/auth/reset-password` | `POST` | Public | None | `authController.resetPassword` |
+| `/api/v1/auth/logout` | `POST` | Protected | `authenticate()` | `authController.logout` |
+| `/api/v1/auth/change-password` | `POST` | Protected | `authenticate()` | `authController.changePassword` |
+
+---
+
 ## 🎮 Authentication Controller (`SPEC-026`)
 
-The authentication controller (`backend/src/modules/auth/controllers/auth.controller.ts`) acts as a thin HTTP translation layer between Express request pipelines and `AuthService`:
-
-### Controller Methods & Lifecycle
-- **`login(req, res)`**: Validates `req.body` using `loginSchema`. If valid, calls `authService.login(credentials)` and returns HTTP `200 OK`. Returns HTTP `400 Bad Request` on validation failure, or HTTP `401 Unauthorized` on authentication errors.
-- **`refreshToken(req, res)`**: Validates `req.body` via `refreshTokenSchema` and calls `authService.refreshToken()`.
-- **`logout(req, res)`**: Invokes `authService.logout()`.
-- **`forgotPassword(req, res)`**: Validates payload via `forgotPasswordSchema` and calls `authService.forgotPassword()`.
-- **`resetPassword(req, res)`**: Validates payload via `resetPasswordSchema` and calls `authService.resetPassword()`.
-- **`changePassword(req, res)`**: Validates payload via `changePasswordSchema` and calls `authService.changePassword()`.
-
-### Standardized Response Contracts
-
-#### Success Response (HTTP 200 / 201)
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "data": {
-    "user": { ... },
-    "tokens": { ... }
-  }
-}
-```
-
-#### Validation Error Response (HTTP 400)
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "errors": [
-    "Invalid email address format"
-  ]
-}
-```
-
-#### Authentication Error Response (HTTP 401)
-```json
-{
-  "success": false,
-  "message": "Invalid email or password"
-}
-```
+Acts as a thin HTTP translation layer between Express request pipelines and `AuthService`:
+- Validates request payloads using Zod schemas (`loginSchema`, `refreshTokenSchema`, etc.).
+- Formats standardized JSON success (`{ success: true, message, data }`) and error responses.
 
 ---
 
@@ -119,13 +98,13 @@ Centralized Zod request payload validation schemas (`loginSchema`, `refreshToken
                  │
                  ▼
        ┌───────────────────┐
-       │   authenticate()  │  ---> Verifies Bearer JWT signature & expiration.
-       └─────────┬─────────┘       Attaches req.authenticatedUser context.
+       │   /api/v1/auth    │  ---> Registered in backend/src/index.ts
+       └─────────┬─────────┘
                  │
                  ▼
        ┌───────────────────┐
-       │ authorize(...roles)│ ---> Evaluates req.authenticatedUser.roleName.
-       └─────────┬─────────┘       Enforces RBAC permissions without re-verifying JWT.
+       │   authenticate()  │  ---> (Protected endpoints only) Verifies Bearer JWT.
+       └─────────┬─────────┘       Attaches req.authenticatedUser context.
                  │
                  ▼
        ┌───────────────────┐
@@ -176,5 +155,4 @@ Centralized Zod request payload validation schemas (`loginSchema`, `refreshToken
 6. **SPEC-024 (Completed)**: Authentication Validation Schemas (`auth.validator.ts`).
 7. **SPEC-025 (Completed)**: Authentication Service (`auth.service.ts`).
 8. **SPEC-026 (Completed)**: Authentication Controller (`auth.controller.ts`).
-9. **SPEC-027**: User Registration & Login API routes (`/api/v1/auth/register`, `/api/v1/auth/login`).
-10. **SPEC-028**: Token Refresh & Logout API routes (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).
+9. **SPEC-027 (Completed)**: Authentication Routes (`auth.routes.ts` under `/api/v1/auth`).
