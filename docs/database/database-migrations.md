@@ -1,6 +1,6 @@
-# FleetCore Database Migrations Documentation
+# FleetCore Database Migrations & Seed Documentation
 
-This document logs all production Prisma database migrations, their objectives, created schema objects, and execution considerations for FleetCore.
+This document logs all production Prisma database migrations, seed data configurations, created schema objects, and execution considerations for FleetCore.
 
 ---
 
@@ -57,27 +57,43 @@ Initial DDL schema migration establishing the core database structure for FleetC
 
 ---
 
-### 🛡️ Index & Constraint Summary
+## 🛠️ Initial Database Seed (`SPEC-018`)
 
-- **Primary Keys**: UUID PKs assigned to all 14 tables.
-- **Unique Constraints**:
-  - `Company.registrationNumber`
-  - `Role.name`
-  - `User.email`
-  - `Driver.employeeId`, `Driver.licenseNumber`, `Driver.userId`
-  - `Vehicle.registrationNumber`, `Vehicle.vin`
-  - `Customer.customerCode`
-  - `Shipment.shipmentNumber`
-  - `Route.routeCode`
-  - `Trip.tripNumber`
-  - `FuelRecord.fuelRecordNumber`
-  - `MaintenanceRecord.maintenanceRecordNumber`
-- **Foreign Keys**: 23 foreign key constraint relations configured (`ON DELETE CASCADE` for tenant entities, `ON DELETE RESTRICT` for `User -> Role`).
-- **Indexes**: 70+ performance indexes generated across tenant IDs, foreign keys, operational status fields, and timestamp ranges.
+The initial database seed script is implemented at `backend/prisma/seed.ts` and configured in `package.json` under `"prisma": { "seed": "npx ts-node prisma/seed.ts" }`.
+
+### Idempotency Strategy
+The seed script uses Prisma `upsert` queries (`where` unique constraints) for all seeded entities. Executing `npx prisma db seed` repeatedly updates existing records without creating duplicate rows.
+
+### Seeded Foundational Data
+
+#### 1. System Health Anchor
+- **ID**: `00000000-0000-0000-0000-000000000001`
+
+#### 2. Default System Roles (5 Roles)
+- **`Super Admin`**: System administrator with unrestricted global access (`isSystem: true`).
+- **`Company Admin`**: Tenant administrator with full company-level management rights (`isSystem: true`).
+- **`Fleet Manager`**: Operations manager for vehicles, drivers, fuel, and maintenance (`isSystem: true`).
+- **`Dispatcher`**: Logistics operator managing shipments, routes, and trip dispatches (`isSystem: true`).
+- **`Driver`**: Operational driver executing trips and submitting fuel/location logs (`isSystem: true`).
+
+#### 3. Default Tenant Company (1 Company)
+- **Name**: `FleetCore Demo Company`
+- **Registration Number**: `DEMO-FC-2026`
+- **Email**: `admin@fleetcore.demo`
+- **Status**: `ACTIVE`
+
+#### 4. Default Super Administrator User (1 User)
+- **Email**: `admin@fleetcore.demo`
+- **Name**: FleetCore Administrator
+- **Role**: Super Admin
+- **Company**: FleetCore Demo Company
+- **Password**: `Admin@FleetCore2026!` (Stored as a secure `bcrypt` hash with cost factor 10)
+- **Email Verified**: `true`
 
 ---
 
 ### 💡 Execution Considerations & Remote Environments
 
 > [!NOTE]
-> The migration script `prisma/migrations/20260802043500_init/migration.sql` was compiled directly from the declarative Prisma schema using `prisma migrate diff`. When connecting to a live remote PostgreSQL instance (e.g. Neon PostgreSQL), execute `npx prisma migrate deploy` in production or `npx prisma migrate dev` in local environments to apply the migration SQL.
+> - **Migration Command**: Run `npx prisma migrate deploy` in production environments.
+> - **Seed Command**: Run `npx prisma db seed` to initialize or update foundational roles, demo company, and super admin account.
