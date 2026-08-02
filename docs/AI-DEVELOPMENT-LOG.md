@@ -85,4 +85,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-070** | Tracking Service Layer | Completed | 2026-08-02 | `9188030` |
 | **SPEC-071** | Tracking Controller Layer | Completed | 2026-08-02 | `93179a0` |
 | **SPEC-072** | Tracking Routes Layer | Completed | 2026-08-02 | `e3070cb` |
-| **SPEC-073** | Tracking Integration Testing & Production Hardening | Completed | 2026-08-02 | `a7b7b1c476f1c2cff9186fc36d016c6e23321171` |
+| **SPEC-073** | Tracking Integration Testing & Production Hardening | Completed | 2026-08-02 | `b55d7d1` |
+| **SPEC-074** | Notification Validation Layer | Completed | 2026-08-02 | `2de92f23a6e3f659da8280871151ef06491c486c` |
