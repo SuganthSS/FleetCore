@@ -11,8 +11,10 @@ import { CustomersPage } from '@/pages/CustomersPage';
 import { ShipmentsPage } from '@/pages/ShipmentsPage';
 import { RoutesPage } from '@/pages/RoutesPage';
 import { TripsPage } from '@/pages/TripsPage';
+import { FuelPage } from '@/pages/FuelPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+
 
 const router = createBrowserRouter([
 
@@ -73,8 +75,13 @@ const router = createBrowserRouter([
             path: '/trips',
             element: <TripsPage />,
           },
+          {
+            path: '/fuel',
+            element: <FuelPage />,
+          },
         ],
       },
+
 
     ],
   },

@@ -7,3 +7,4 @@ export * from './customer';
 export * from './shipment';
 export * from './route';
 export * from './trip';
+export * from './fuel';
