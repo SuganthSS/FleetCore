@@ -29,4 +29,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-015** | Notification Model | Completed | 2026-08-02 | `5461f306648c5628ef5e1930fd0d211b5f20220e` |
 | **SPEC-016** | Database Schema Audit | Completed | 2026-08-02 | `342c69c19b179ac3fb92bcb2c35b50356cd0b65a` |
 | **SPEC-017** | Initial Prisma Migration | Completed | 2026-08-02 | `19b3a269690e3389de1d461075bbfe97da63d08a` |
-| **SPEC-018** | Initial Seed Data | Completed | 2026-08-02 | `c48fee07b3f299f3696aca3808e8eab6eb45de79` |
+| **SPEC-018** | Initial Seed Data | Completed | 2026-08-02 | `1503c85b21ddeceddd93c0fdcfe2288562e12a2f` |
+| **SPEC-019** | Authentication Foundation | Completed | 2026-08-02 | `3fc13496ca6905566f3cff41326b1f5c97c550d4` |
