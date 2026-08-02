@@ -13,6 +13,7 @@ import {
   Navigation,
   Bell,
   TrendingUp,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -35,7 +36,9 @@ const navItems: NavItem[] = [
   { name: 'GPS Tracking', path: '/tracking', icon: Navigation },
   { name: 'Notifications', path: '/notifications', icon: Bell },
   { name: 'Analytics', path: '/analytics', icon: TrendingUp },
+  { name: 'Reports', path: '/reports', icon: FileText },
 ];
+
 
 
 
