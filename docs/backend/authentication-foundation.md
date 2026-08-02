@@ -1,16 +1,16 @@
 # FleetCore Authentication Foundation Architecture
 
-**SPEC ID**: SPEC-019, SPEC-020, SPEC-021, SPEC-022, SPEC-023, SPEC-024, SPEC-025  
+**SPEC ID**: SPEC-019, SPEC-020, SPEC-021, SPEC-022, SPEC-023, SPEC-024, SPEC-025, SPEC-026  
 **Phase**: Phase 5 - Backend Authentication  
 **Module**: Authentication  
-**Title**: Authentication Foundation, Security Utilities, Middleware, Validation & Service Documentation  
+**Title**: Authentication Foundation, Security Utilities, Middleware, Validation, Service & Controller Documentation  
 **Date**: 2026-08-02  
 
 ---
 
 ## 🏗️ Architecture Overview
 
-The `auth` module provides the architectural blueprint and foundational layer for all identity, authentication, session management, and RBAC operations within FleetCore. It adheres to modular domain design principles, isolating authentication configuration, contracts, interfaces, utilities, middlewares, validation schemas, and business services.
+The `auth` module provides the architectural blueprint and foundational layer for all identity, authentication, session management, and RBAC operations within FleetCore. It adheres to modular domain design principles, isolating authentication configuration, contracts, interfaces, utilities, middlewares, validation schemas, business services, and HTTP controllers.
 
 ---
 
@@ -24,7 +24,8 @@ backend/src/modules/auth/
 │   ├── auth.constants.ts    # Reusable constants (Token types, cookie names, header keys)
 │   └── index.ts             # Barrel export
 ├── controllers/
-│   └── index.ts             # Controller exports (HTTP request handling - Future SPECs)
+│   ├── auth.controller.ts   # Express HTTP controller layer (Request validation & response formatting)
+│   └── index.ts             # Barrel export
 ├── interfaces/
 │   ├── auth.interface.ts    # Interface contracts (AuthenticatedUser, JwtPayload, TokenPair, etc.)
 │   └── index.ts             # Barrel export
@@ -52,29 +53,66 @@ backend/src/modules/auth/
 
 ---
 
+## 🎮 Authentication Controller (`SPEC-026`)
+
+The authentication controller (`backend/src/modules/auth/controllers/auth.controller.ts`) acts as a thin HTTP translation layer between Express request pipelines and `AuthService`:
+
+### Controller Methods & Lifecycle
+- **`login(req, res)`**: Validates `req.body` using `loginSchema`. If valid, calls `authService.login(credentials)` and returns HTTP `200 OK`. Returns HTTP `400 Bad Request` on validation failure, or HTTP `401 Unauthorized` on authentication errors.
+- **`refreshToken(req, res)`**: Validates `req.body` via `refreshTokenSchema` and calls `authService.refreshToken()`.
+- **`logout(req, res)`**: Invokes `authService.logout()`.
+- **`forgotPassword(req, res)`**: Validates payload via `forgotPasswordSchema` and calls `authService.forgotPassword()`.
+- **`resetPassword(req, res)`**: Validates payload via `resetPasswordSchema` and calls `authService.resetPassword()`.
+- **`changePassword(req, res)`**: Validates payload via `changePasswordSchema` and calls `authService.changePassword()`.
+
+### Standardized Response Contracts
+
+#### Success Response (HTTP 200 / 201)
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": { ... },
+    "tokens": { ... }
+  }
+}
+```
+
+#### Validation Error Response (HTTP 400)
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    "Invalid email address format"
+  ]
+}
+```
+
+#### Authentication Error Response (HTTP 401)
+```json
+{
+  "success": false,
+  "message": "Invalid email or password"
+}
+```
+
+---
+
 ## ⚙️ Authentication Service (`SPEC-025`)
 
-The authentication service (`backend/src/modules/auth/services/auth.service.ts`) encapsulates all core business logic for user authentication, isolated from HTTP layer concerns (Express `req`/`res`).
-
-### Core Methods & Workflows
-- **`login(credentials: LoginRequest): Promise<LoginResponse>`**:
-  1. Queries Prisma `User` table by `email`, retrieving attached `company` and `role` relations.
-  2. Verifies user exists & compares plaintext password against stored `passwordHash` via `comparePassword`.
-  3. Validates `user.status === 'ACTIVE'` and parent `company.status === 'ACTIVE'`.
-  4. Generates Access and Refresh JWT token pair via `generateAccessToken` and `generateRefreshToken`.
-  5. Updates `lastLogin` timestamp in PostgreSQL.
-  6. Returns structured `LoginResponse` (`AuthenticatedUser` + `TokenPair`), excluding `passwordHash`.
-- **Placeholders**: `refreshToken()`, `logout()`, `forgotPassword()`, `resetPassword()`, `changePassword()`.
+Encapsulates core business logic for user authentication (`login`, `refreshToken`, `logout`, `forgotPassword`, `resetPassword`, `changePassword`).
 
 ---
 
 ## 📐 Authentication Validation Schemas (`SPEC-024`)
 
-The validation schemas (`backend/src/modules/auth/validators/auth.validator.ts`) provide centralized Zod request payload validation (`loginSchema`, `refreshTokenSchema`, `changePasswordSchema`, `forgotPasswordSchema`, `resetPasswordSchema`).
+Centralized Zod request payload validation schemas (`loginSchema`, `refreshTokenSchema`, `changePasswordSchema`, `forgotPasswordSchema`, `resetPasswordSchema`).
 
 ---
 
-## 🔄 Middleware Execution Lifecycle
+## 🔄 Request Execution Lifecycle
 
 ```text
        Incoming HTTP Request
@@ -91,7 +129,12 @@ The validation schemas (`backend/src/modules/auth/validators/auth.validator.ts`)
                  │
                  ▼
        ┌───────────────────┐
-       │ Route Controller  │ ---> Validates body via Zod schemas & delegates to AuthService.
+       │  AuthController   │ ---> Validates body via Zod schemas & delegates to AuthService.
+       └─────────┬─────────┘       Formats standardized JSON response.
+                 │
+                 ▼
+       ┌───────────────────┐
+       │   AuthService     │ ---> Executes Prisma queries, password checks & JWT creation.
        └───────────────────┘
 ```
 
@@ -132,5 +175,6 @@ The validation schemas (`backend/src/modules/auth/validators/auth.validator.ts`)
 5. **SPEC-023 (Completed)**: RBAC Middleware (`authorize`).
 6. **SPEC-024 (Completed)**: Authentication Validation Schemas (`auth.validator.ts`).
 7. **SPEC-025 (Completed)**: Authentication Service (`auth.service.ts`).
-8. **SPEC-026**: User Registration & Login API endpoints (`/api/v1/auth/register`, `/api/v1/auth/login`).
-9. **SPEC-027**: Token Refresh & Logout API endpoints (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).
+8. **SPEC-026 (Completed)**: Authentication Controller (`auth.controller.ts`).
+9. **SPEC-027**: User Registration & Login API routes (`/api/v1/auth/register`, `/api/v1/auth/login`).
+10. **SPEC-028**: Token Refresh & Logout API routes (`/api/v1/auth/refresh`, `/api/v1/auth/logout`).

@@ -1,2 +1,1 @@
-// Controllers directory placeholder export
-export {};
+export * from './auth.controller';

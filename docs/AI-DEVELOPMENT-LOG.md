@@ -36,4 +36,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-022** | Authentication Middleware | Completed | 2026-08-02 | `1deb8666de1d9538639c8f6b8653b4c5de105336` |
 | **SPEC-023** | Role-Based Access Control (RBAC) Middleware | Completed | 2026-08-02 | `49755bfef67cfcfe08a6dd1fdc47f1a23a283e1b` |
 | **SPEC-024** | Authentication Validation Schemas | Completed | 2026-08-02 | `23346b2d624216bab06c16df41484dc70845d637` |
-| **SPEC-025** | Authentication Service | Completed | 2026-08-02 | `a7de7e42e9445d3329ae1062d8122334d165d143` |
+| **SPEC-025** | Authentication Service | Completed | 2026-08-02 | `b6d23a33ae1b24635f47355466737369e813524f` |
+| **SPEC-026** | Authentication Controller | Completed | 2026-08-02 | `65198ef2f24504eb5f9b8f5e63dfc2cf1b80dfcf` |
