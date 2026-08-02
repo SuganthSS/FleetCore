@@ -72,4 +72,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-057** | Trip Routes Layer | Completed | 2026-08-02 | `a27dbc8` |
 | **SPEC-058** | Trip Integration Testing & Production Hardening | Completed | 2026-08-02 | `53b9e51` |
 | **SPEC-059** | Fuel Validation Layer | Completed | 2026-08-02 | `c44458f` |
-| **SPEC-060** | Fuel Service Layer | Completed | 2026-08-02 | `f07ccb0cb37f0f653d0dd2b8fbdf76d94282dadc` |
+| **SPEC-060** | Fuel Service Layer | Completed | 2026-08-02 | `89a51d4` |
+| **SPEC-061** | Fuel Controller Layer | Completed | 2026-08-02 | `42942594546d47ee0e99232f75e375d052b255a7` |

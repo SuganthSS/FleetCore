@@ -2,7 +2,7 @@
 
 **Module**: Fuel Management (`backend/src/modules/fuel`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation & Service Layers Implemented  
+**Status**: Validation, Service & Controller Layers Implemented  
 
 ---
 
@@ -76,10 +76,38 @@ The `FuelService` class manages vehicle refueling operational events, tenant iso
 
 ---
 
+## 🎮 Fuel Controller Layer (`controllers/fuel.controller.ts`)
+
+The `FuelController` layer processes HTTP requests, validates inputs using Zod, extracts authenticated tenant context (`companyId`), and maps service outputs/errors into standardized JSON responses.
+
+### HTTP Status Code Mapping
+
+| Status Code | Description | Scenario |
+| :--- | :--- | :--- |
+| **200 OK** | Success | Querying, updating, or deleting fuel records |
+| **201 Created** | Created | Successfully recording refueling event |
+| **400 Bad Request** | Validation Error | Payload/Query/Params validation failure |
+| **404 Not Found** | Resource Not Found | FuelRecord/Vehicle/Trip/Company not found, vehicle/trip mismatch, cross-tenant access |
+| **409 Conflict** | Duplicate Constraint | Duplicate `receiptNumber` |
+| **500 Error** | Internal Server Error | Unhandled server error |
+
+### Request Lifecycle
+
+```text
+HTTP Request
+  → Zod safeParse (params/query/body)
+  → Extract req.authenticatedUser.companyId
+  → fuelService method()
+  → Standardized JSON response
+```
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  fuelController,
   fuelService,
   createFuelRecordSchema,
   updateFuelRecordSchema,
@@ -92,4 +120,5 @@ import {
   PaginatedFuelRecordResult,
 } from './modules/fuel';
 ```
+
 
