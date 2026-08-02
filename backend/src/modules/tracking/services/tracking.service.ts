@@ -200,6 +200,40 @@ export class TrackingService {
       where.driverId = query.driverId;
     }
 
+    if (query.search) {
+      const searchTerm = query.search;
+      where.OR = [
+        {
+          vehicle: {
+            registrationNumber: {
+              contains: searchTerm,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          driver: {
+            is: {
+              employeeId: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+        {
+          driver: {
+            is: {
+              licenseNumber: {
+                contains: searchTerm,
+                mode: 'insensitive',
+              },
+            },
+          },
+        },
+      ];
+    }
+
     const sortBy = query.sortBy || 'recordedAt';
     const sortOrder = query.sortOrder || 'desc';
 
