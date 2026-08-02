@@ -2,7 +2,7 @@
 
 **Module**: Tracking & Location History (`backend/src/modules/tracking`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation, Service & Controller Layers Implemented  
+**Status**: Fully Implemented (Validation, Service, Controller & Routes)  
 
 ---
 
@@ -107,10 +107,32 @@ HTTP Request
 
 ---
 
+## 🛣️ Routes & RBAC Matrix (`routes/tracking.routes.ts`)
+
+Base Route: `/api/v1/tracking`
+
+### Middleware Execution Chain
+```text
+HTTP Request ➔ authenticate() ➔ authorize(...roles) ➔ TrackingController handler
+```
+
+### Endpoints Table & Allowed Roles
+
+| HTTP Method | Path | Description | Allowed Roles (`authorize`) |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/v1/tracking` | List tracking location history entries (Paginated, Filter, Sort) | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `GET` | `/api/v1/tracking/:id` | Retrieve single tracking location history entry by UUID | `Super Admin`, `Company Admin`, `Fleet Manager`, `Dispatcher` |
+| `POST` | `/api/v1/tracking` | Create a new tracking location history breadcrumb entry | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `PUT` | `/api/v1/tracking/:id` | Update an existing tracking location history entry by UUID | `Super Admin`, `Company Admin`, `Fleet Manager` |
+| `DELETE` | `/api/v1/tracking/:id` | Delete a tracking location history entry by UUID | `Super Admin`, `Company Admin` |
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  trackingRoutes,
   trackingController,
   trackingService,
   createTrackingSchema,
