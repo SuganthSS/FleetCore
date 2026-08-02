@@ -54,4 +54,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-039** | Customer Validation Layer | Completed | 2026-08-02 | `f7ca0e20d8ffab419aae762c733735fcd6859df0` |
 | **SPEC-040** | Customer Service Layer | Completed | 2026-08-02 | `dfc61c8dc8b91906cd6dcf29f0673f3b328b5d45` |
 | **SPEC-041** | Customer Controller Layer | Completed | 2026-08-02 | `cdfcbc2b4283c0970293d2799f6318c78a876699` |
-| **SPEC-042** | Customer Routes | Completed | 2026-08-02 | `2cc83d58fefa37a15e4575ff754a6f516c400b87` |
+| **SPEC-042** | Customer Routes | Completed | 2026-08-02 | `c50762ff37d5c5ceacf3e3980a391c3792099d00` |
+| **SPEC-043** | Customer Integration Testing & Production Hardening | Completed | 2026-08-02 | `89d59aa909892b3385522309d21e4bd2c1fb640e` |
