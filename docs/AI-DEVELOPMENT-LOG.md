@@ -103,7 +103,8 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-088** | Customers Management Page | Completed | 2026-08-02 | `a6d333585444b5d4d5de3909d6d159f3128121e2` |
 | **SPEC-089** | Shipments Management Page | Completed | 2026-08-02 | `44b0dce17b13cd57675464de01b4cecaa5f66a70` |
 | **SPEC-090** | Routes Management Page | Completed | 2026-08-02 | `691acc4df23f891b355f5a8cc978200f17d41ec3` |
-| **SPEC-091** | Trips Management Page | Completed | 2026-08-02 | `in-progress` |
+| **SPEC-091** | Trips Management Page | Completed | 2026-08-02 | `7171b508ec877e99f04e5e2daab97cb7d3c75405` |
+
 
 
 
