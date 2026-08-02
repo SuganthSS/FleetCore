@@ -8,3 +8,4 @@ export * from './shipment';
 export * from './route';
 export * from './trip';
 export * from './fuel';
+export * from './maintenance';
