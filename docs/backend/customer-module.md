@@ -2,7 +2,7 @@
 
 **Module**: Customer Management (`backend/src/modules/customer`)  
 **Phase**: Phase 5 - Backend Fleet Management  
-**Status**: Validation & Service Layers Implemented  
+**Status**: Validation, Service & Controller Layers Implemented  
 
 ---
 
@@ -71,10 +71,48 @@ The `CustomerService` class provides framework-independent CRUD operations and b
 
 ---
 
+## 🎮 Customer Controller Layer (`controllers/customer.controller.ts`)
+
+The `CustomerController` layer handles HTTP requests, validates inputs via Zod, extracts authenticated tenant context, and maps service outputs/errors into standardized JSON responses.
+
+### Standardized HTTP Response Structure
+
+#### Success Response (Create - 201)
+```json
+{
+  "success": true,
+  "message": "Customer created successfully",
+  "data": { ... }
+}
+```
+
+#### Validation Error (400)
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": ["Customer code is required", "Invalid email address"]
+}
+```
+
+#### HTTP Status Code Mapping
+
+| Status Code | Description | Scenario |
+| :--- | :--- | :--- |
+| **200 OK** | Success | Querying, updating, or deleting customers |
+| **201 Created** | Created | Successfully creating a customer |
+| **400 Bad Request** | Validation Error | Payload/Query/Params validation failure |
+| **404 Not Found** | Resource Not Found | Customer/Company not found, or cross-tenant access |
+| **409 Conflict** | Duplicate Constraint | Duplicate customerCode or email within tenant |
+| **500 Error** | Internal Server Error | Unhandled server error |
+
+---
+
 ## 🏷️ Exported TypeScript Types & Functions
 
 ```typescript
 import {
+  customerController,
   customerService,
   createCustomerSchema,
   updateCustomerSchema,
