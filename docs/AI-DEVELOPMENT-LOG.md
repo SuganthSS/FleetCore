@@ -26,4 +26,5 @@ This document tracks all AI-driven specifications (SPECs), objectives, completio
 | **SPEC-012** | Fuel Record Model | Completed | 2026-08-02 | `7c95f95c804922e0447483374cd71f0209567550` |
 | **SPEC-013** | Maintenance Record Model | Completed | 2026-08-02 | `df3650505f8bd18370a441e816feef4b36b08c3b` |
 | **SPEC-014** | Vehicle Location History Model | Completed | 2026-08-02 | `eaeeec016a976649462d7be84a9abce232f18a23` |
-| **SPEC-015** | Notification Model | Completed | 2026-08-02 | `e752bc09215eb9a65ea36cb66bbc57a0a2d75d34` |
+| **SPEC-015** | Notification Model | Completed | 2026-08-02 | `5461f306648c5628ef5e1930fd0d211b5f20220e` |
+| **SPEC-016** | Database Schema Audit | Completed | 2026-08-02 | `763cde329ce95feac823d397ef1a8006d6613fdd` |
