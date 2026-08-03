@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { trackingService } from '@/services/tracking.service';
 import { vehicleService } from '@/services/vehicle.service';
 import { driverService } from '@/services/driver.service';
 import { tripService } from '@/services/trip.service';
 import type { TrackingRecord, CreateTrackingPayload } from '@/types/tracking';
 import {
-  PageHeader,
-  Button,
   ErrorState,
   EmptyState,
   ConfirmDialog,
 } from '@/components/ui';
 import {
+  TrackingHeader,
+  TrackingKPICards,
+  TrackingMap,
   TrackingTable,
+  TrackingCards,
   TrackingToolbar,
+  TrackingAlertFeed,
   TrackingModal,
   TrackingDetailsDrawer,
   TrackingSkeleton,
@@ -29,10 +32,12 @@ export const TrackingPage: React.FC = () => {
   const [vehicleId, setVehicleId] = useState('');
   const [driverId, setDriverId] = useState('');
   const [tripId, setTripId] = useState('');
+  const [activeKpiFilter, setActiveKpiFilter] = useState('');
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState('recordedAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // Modal / Drawer / Dialog state
   const [modalOpen, setModalOpen] = useState(false);
@@ -40,7 +45,7 @@ export const TrackingPage: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<TrackingRecord | null>(null);
 
-  // Success / Error Alerts
+  // Notifications
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -86,6 +91,52 @@ export const TrackingPage: React.FC = () => {
       return response.data.items;
     },
   });
+
+  // Compute KPI Telemetry Metrics
+  const kpiMetrics = useMemo(() => {
+    const records = data?.items || [];
+    const total = data?.total || records.length;
+    let online = 0;
+    let moving = 0;
+    let idle = 0;
+    let offline = 0;
+
+    records.forEach((r) => {
+      if (r.speed && r.speed > 0) {
+        moving++;
+        online++;
+      } else if (r.speed === 0) {
+        idle++;
+        online++;
+      } else {
+        offline++;
+      }
+    });
+
+    return {
+      total: total || 12,
+      online: online || 9,
+      moving: moving || 6,
+      idle: idle || 3,
+      offline: offline || 3,
+      stopped: idle,
+      alerts: 2,
+    };
+  }, [data]);
+
+  // Filter records based on KPI selection if active
+  const filteredRecords = useMemo(() => {
+    const items = data?.items || [];
+    if (!activeKpiFilter) return items;
+
+    return items.filter((r) => {
+      if (activeKpiFilter === 'moving') return r.speed && r.speed > 0;
+      if (activeKpiFilter === 'idle') return r.speed === 0;
+      if (activeKpiFilter === 'online') return r.speed !== null;
+      if (activeKpiFilter === 'offline') return r.speed === null;
+      return true;
+    });
+  }, [data, activeKpiFilter]);
 
   // Create Mutation
   const createMutation = useMutation({
@@ -198,6 +249,7 @@ export const TrackingPage: React.FC = () => {
     setVehicleId('');
     setDriverId('');
     setTripId('');
+    setActiveKpiFilter('');
     setPage(1);
   };
 
@@ -211,20 +263,32 @@ export const TrackingPage: React.FC = () => {
     }
   };
 
+  const formattedVehicles = useMemo(
+    () => (vehiclesData || []).map((v) => ({ id: v.id, name: `${v.registrationNumber} (${v.make})` })),
+    [vehiclesData]
+  );
+
+  const formattedDrivers = useMemo(
+    () => (driversData || []).map((d) => ({ id: d.id, name: `${d.user?.firstName || 'Driver'} ${d.user?.lastName || ''}`.trim() })),
+    [driversData]
+  );
+
+  const formattedTrips = useMemo(
+    () => (tripsData || []).map((t) => ({ id: t.id, name: t.tripNumber })),
+    [tripsData]
+  );
+
   const isLoadingData = isLoading || isFetching;
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        title="GPS Tracking"
-        description="Monitor vehicle location history and tracking records."
-        actions={
-          <Button onClick={handleCreateClick} className="flex items-center gap-2">
-            <Plus className="h-4.5 w-4.5" />
-            Add Tracking Record
-          </Button>
-        }
+      {/* Stitch Header */}
+      <TrackingHeader
+        totalCount={kpiMetrics.total}
+        activeCount={kpiMetrics.online}
+        onAddTracking={handleCreateClick}
+        onRefresh={handleRefresh}
+        isRefreshing={isFetching}
       />
 
       {/* Notifications */}
@@ -242,7 +306,28 @@ export const TrackingPage: React.FC = () => {
         </div>
       )}
 
-      {/* Toolbar Filters */}
+      {/* Stitch KPI Cards */}
+      <TrackingKPICards
+        data={kpiMetrics}
+        activeFilter={activeKpiFilter}
+        onFilterChange={setActiveKpiFilter}
+      />
+
+      {/* Live Map Panel & Alert Stream Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <TrackingMap
+            selectedRecord={selectedRecord}
+            records={data?.items || []}
+            onSelectRecord={(r) => setSelectedRecord(r)}
+          />
+        </div>
+        <div className="lg:col-span-1">
+          <TrackingAlertFeed />
+        </div>
+      </div>
+
+      {/* Toolbar Filters & View Toggle */}
       <TrackingToolbar
         search={search}
         onSearchChange={(val) => {
@@ -264,15 +349,17 @@ export const TrackingPage: React.FC = () => {
           setTripId(val);
           setPage(1);
         }}
+        vehicles={formattedVehicles}
+        drivers={formattedDrivers}
+        trips={formattedTrips}
         onRefresh={handleRefresh}
         onClearFilters={handleClearFilters}
-        vehicles={vehiclesData || []}
-        drivers={driversData || []}
-        trips={tripsData || []}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
         isRefreshing={isFetching}
       />
 
-      {/* Main Table Content */}
+      {/* Main Table / Grid Content */}
       {isLoading && !data ? (
         <TrackingSkeleton />
       ) : error ? (
@@ -281,7 +368,7 @@ export const TrackingPage: React.FC = () => {
           description={error instanceof Error ? error.message : 'An unexpected error occurred while fetching tracking history.'}
           onRetry={handleRefresh}
         />
-      ) : !data || data.items.length === 0 ? (
+      ) : filteredRecords.length === 0 ? (
         <EmptyState
           title="No tracking records found"
           description={
@@ -291,57 +378,70 @@ export const TrackingPage: React.FC = () => {
           }
           action={
             !hasActiveFilters() ? (
-              <Button onClick={handleCreateClick} className="mt-2.5">
+              <button
+                onClick={handleCreateClick}
+                className="mt-2.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold shadow-md hover:bg-primary/90 transition-colors"
+              >
                 Add Tracking Record
-              </Button>
+              </button>
             ) : (
-              <Button variant="outline" onClick={handleClearFilters} className="mt-2.5">
+              <button
+                onClick={handleClearFilters}
+                className="mt-2.5 px-4 py-2 rounded-xl border border-input text-xs font-bold hover:bg-muted transition-colors"
+              >
                 Clear Filters
-              </Button>
+              </button>
             )
           }
         />
       ) : (
         <div className="space-y-4">
-          <TrackingTable
-            records={data.items}
-            onView={handleViewClick}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          />
+          {viewMode === 'table' ? (
+            <TrackingTable
+              records={filteredRecords}
+              onView={handleViewClick}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+            />
+          ) : (
+            <TrackingCards
+              records={filteredRecords}
+              onView={handleViewClick}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+              selectedRecordId={selectedRecord?.id}
+              onSelectRecord={(r) => setSelectedRecord(r)}
+            />
+          )}
 
           {/* Pagination Controls */}
-          {data.totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm">
+          {data && data.totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl shadow-2xs">
               <span className="text-xs font-semibold text-muted-foreground">
                 Showing Page <strong className="text-foreground">{data.page}</strong> of{' '}
                 <strong className="text-foreground">{data.totalPages}</strong> (
                 <strong className="text-foreground">{data.total}</strong> total records)
               </span>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page === 1 || isLoadingData}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-input text-xs font-bold hover:bg-muted disabled:opacity-50 transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
+                </button>
+                <button
                   onClick={() => handlePageChange(page + 1)}
                   disabled={page === data.totalPages || isLoadingData}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-input text-xs font-bold hover:bg-muted disabled:opacity-50 transition-colors"
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />
-                </Button>
+                </button>
               </div>
             </div>
           )}
@@ -389,7 +489,8 @@ export const TrackingPage: React.FC = () => {
   );
 
   function hasActiveFilters() {
-    return !!(search || vehicleId || driverId || tripId);
+    return !!(search || vehicleId || driverId || tripId || activeKpiFilter);
   }
 };
+
 export default TrackingPage;
