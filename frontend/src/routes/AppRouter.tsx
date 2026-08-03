@@ -20,7 +20,10 @@ import { TripDetailsPage } from '@/pages/TripDetailsPage';
 import { FuelPage } from '@/pages/FuelPage';
 import { MaintenancePage } from '@/pages/MaintenancePage';
 import { TrackingPage } from '@/pages/TrackingPage';
-import { NotificationsPage } from '@/pages/NotificationsPage';
+import { NotificationCenterPage } from '@/pages/NotificationCenterPage';
+import { DocumentLibraryPage } from '@/pages/DocumentLibraryPage';
+import { MyProfilePage } from '@/pages/MyProfilePage';
+import { GlobalSearchPage } from '@/pages/GlobalSearchPage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
@@ -138,7 +141,19 @@ const router = createBrowserRouter([
           },
           {
             path: '/notifications',
-            element: <NotificationsPage />,
+            element: <NotificationCenterPage />,
+          },
+          {
+            path: '/documents',
+            element: <DocumentLibraryPage />,
+          },
+          {
+            path: '/profile',
+            element: <MyProfilePage />,
+          },
+          {
+            path: '/search',
+            element: <GlobalSearchPage />,
           },
           {
             path: '/analytics',

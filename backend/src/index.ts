@@ -24,6 +24,7 @@ import { roleRoutes } from './modules/role';
 import { auditRoutes } from './modules/audit';
 import { settingsRoutes } from './modules/settings';
 import { aiRoutes } from './modules/ai';
+import { searchRoutes } from './modules/search';
 import { initSocket } from './socket';
 
 const app: Application = express();
@@ -66,6 +67,7 @@ app.use('/api/v1/roles', roleRoutes);
 app.use('/api/v1/audit', auditRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/search', searchRoutes);
 
 
 

@@ -46,7 +46,7 @@ const notificationValidationSchema = z.object({
     .trim()
     .min(1, 'Message content is required')
     .max(1000, 'Message must be 1000 characters max'),
-  type: z.enum(['SYSTEM', 'VEHICLE', 'DRIVER', 'TRIP', 'FUEL', 'MAINTENANCE']),
+  type: z.enum(['SYSTEM', 'VEHICLE', 'DRIVER', 'TRIP', 'FUEL', 'MAINTENANCE', 'AI', 'FLEET']),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']),
   isRead: z.boolean(),
   metadataJson: jsonValidator,
@@ -87,7 +87,7 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
     if (open) {
       if (record) {
         reset({
-          userId: record.userId,
+          userId: record.userId || '',
           title: record.title,
           message: record.message,
           type: record.type,
@@ -226,6 +226,8 @@ export const NotificationModal: React.FC<NotificationModalProps> = ({
                 <option value="TRIP">Trip</option>
                 <option value="FUEL">Fuel</option>
                 <option value="MAINTENANCE">Maintenance</option>
+                <option value="AI">AI Copilot</option>
+                <option value="FLEET">Fleet Event</option>
               </select>
               {errors.type && (
                 <p className="text-[10px] font-bold text-destructive mt-1">

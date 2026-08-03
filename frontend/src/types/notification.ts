@@ -2,12 +2,12 @@ export interface NotificationRecord {
   id: string;
   title: string;
   message: string;
-  type: 'SYSTEM' | 'VEHICLE' | 'DRIVER' | 'TRIP' | 'FUEL' | 'MAINTENANCE';
+  type: 'SYSTEM' | 'VEHICLE' | 'DRIVER' | 'TRIP' | 'FUEL' | 'MAINTENANCE' | 'AI' | 'FLEET';
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   isRead: boolean;
-  readAt: string | null;
+  readAt?: string | null;
   companyId: string;
-  userId: string;
+  userId?: string;
   createdAt: string;
   updatedAt: string;
   metadata?: Record<string, any> | null;
@@ -41,7 +41,7 @@ export interface CreateNotificationPayload {
   userId: string;
   title: string;
   message: string;
-  type?: 'SYSTEM' | 'VEHICLE' | 'DRIVER' | 'TRIP' | 'FUEL' | 'MAINTENANCE';
+  type?: 'SYSTEM' | 'VEHICLE' | 'DRIVER' | 'TRIP' | 'FUEL' | 'MAINTENANCE' | 'AI' | 'FLEET';
   priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   isRead?: boolean;
   readAt?: string | null;

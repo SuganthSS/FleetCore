@@ -14,7 +14,7 @@ import {
 } from '@/components/ui';
 import {
   NotificationTable,
-  NotificationToolbar,
+  NotificationCrudToolbar,
   NotificationModal,
   NotificationDetailsDrawer,
   NotificationSkeleton,
@@ -259,29 +259,29 @@ export const NotificationsPage: React.FC = () => {
       )}
 
       {/* Toolbar Filters */}
-      <NotificationToolbar
+      <NotificationCrudToolbar
         search={search}
-        onSearchChange={(val) => {
+        onSearchChange={(val: string) => {
           setSearch(val);
           setPage(1);
         }}
         userId={userId}
-        onUserIdChange={(val) => {
+        onUserIdChange={(val: string) => {
           setUserId(val);
           setPage(1);
         }}
         type={type}
-        onTypeChange={(val) => {
+        onTypeChange={(val: string) => {
           setType(val);
           setPage(1);
         }}
         priority={priority}
-        onPriorityChange={(val) => {
+        onPriorityChange={(val: string) => {
           setPriority(val);
           setPage(1);
         }}
         isRead={isRead}
-        onIsReadChange={(val) => {
+        onIsReadChange={(val: string) => {
           setIsRead(val);
           setPage(1);
         }}
