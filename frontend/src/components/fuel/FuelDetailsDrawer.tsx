@@ -1,7 +1,7 @@
 import React from 'react';
-import { X, Truck, Navigation, Fuel, Compass, MessageSquare } from 'lucide-react';
-
+import { X, Fuel, Truck, DollarSign, FileText } from 'lucide-react';
 import type { FuelRecord } from '@/types/fuel';
+import { FuelStatusBadge } from './FuelStatusBadge';
 
 interface FuelDetailsDrawerProps {
   record: FuelRecord | null;
@@ -9,216 +9,144 @@ interface FuelDetailsDrawerProps {
   onClose: () => void;
 }
 
-export const FuelDetailsDrawer: React.FC<FuelDetailsDrawerProps> = ({
-  record,
-  open,
-  onClose,
-}) => {
+export const FuelDetailsDrawer: React.FC<FuelDetailsDrawerProps> = ({ record, open, onClose }) => {
   if (!open || !record) return null;
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-xs" onClick={onClose} />
 
-      <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
-        {/* Drawer Panel */}
-        <div className="pointer-events-auto w-screen max-w-md transform bg-card shadow-2xl transition-all duration-300 border-l border-border flex flex-col h-full animate-slide-in">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-border px-6 py-5">
-            <div>
-              <h2 className="text-base font-bold text-foreground">
-                Fuel Refueling Record
-              </h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Record ID: {record.fuelRecordNumber}
-              </p>
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
+        <div className="w-screen max-w-md bg-card border-l border-border shadow-2xl flex flex-col">
+          {/* Drawer Header */}
+          <div className="p-5 border-b border-border flex items-center justify-between bg-muted/30">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <Fuel className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-foreground font-mono">
+                  {record.fuelRecordNumber}
+                </h2>
+                <p className="text-[11px] text-muted-foreground">Fuel Refueling Log Audit</p>
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label="Close details panel"
+              className="p-1.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Details Body */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* Visual Status Panel */}
-            <div className="rounded-xl border border-border bg-muted/20 p-5 flex flex-col items-center text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary mb-3">
-                <Fuel className="h-7 w-7" />
+          {/* Body Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
+            {/* Status Summary Banner */}
+            <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/40 border border-border/80">
+              <div>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  Expenditure Tier
+                </span>
+                <div className="mt-1">
+                  <FuelStatusBadge cost={record.totalCost} quantity={record.quantity} />
+                </div>
               </div>
-              <h3 className="text-sm font-bold text-foreground">
-                {record.stationName}
+              <div className="text-right font-mono">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  Total Paid
+                </span>
+                <span className="text-base font-black text-foreground">
+                  ${record.totalCost.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* Vehicle Information Card */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Truck className="h-3.5 w-3.5 text-primary" />
+                Vehicle Assignment
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Refueled on {formatDate(record.refueledAt)}
-              </p>
-            </div>
-
-            {/* Core Refueling Statistics */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-xl border border-border p-4 text-center bg-card">
-                <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Refueled Quantity</span>
-                <span className="block text-base font-bold text-foreground mt-1">
-                  {record.quantity.toFixed(2)} L
-                </span>
-              </div>
-              <div className="rounded-xl border border-border p-4 text-center bg-card">
-                <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Refueling Cost</span>
-                <span className="block text-base font-bold text-foreground mt-1 text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(record.totalCost)}
-                </span>
-              </div>
-            </div>
-
-            {/* Logistics Associations */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Fleet Associations
-              </h4>
-
-              <div className="divide-y divide-border/60 rounded-xl border border-border overflow-hidden bg-card text-xs">
-                {/* Vehicle */}
-                <div className="p-3.5 flex items-start gap-3">
-                  <Truck className="h-4.5 w-4.5 text-blue-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="block font-bold text-muted-foreground">Assigned Vehicle</span>
-                    {record.vehicle ? (
-                      <span className="block font-bold text-foreground mt-0.5 leading-normal">
-                        {record.vehicle.registrationNumber} ({record.vehicle.make} {record.vehicle.model})
-                      </span>
-                    ) : (
-                      <span className="block text-muted-foreground italic mt-0.5">Not assigned</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Trip */}
-                <div className="p-3.5 flex items-start gap-3">
-                  <Navigation className="h-4.5 w-4.5 text-orange-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="block font-bold text-muted-foreground">Associated Trip Dispatch</span>
-                    {record.trip && record.trip.tripNumber ? (
-                      <span className="block font-bold text-foreground mt-0.5 leading-normal">
-                        {record.trip.tripNumber} ({record.trip.status})
-                      </span>
-                    ) : (
-                      <span className="block text-muted-foreground italic mt-0.5">None / Ad-hoc Refuel</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Odometer */}
-                <div className="p-3.5 flex items-start gap-3">
-                  <Compass className="h-4.5 w-4.5 text-teal-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="block font-bold text-muted-foreground">Odometer Logged</span>
-                    <span className="block font-bold text-foreground mt-0.5 leading-normal">
-                      {record.odometerReading.toLocaleString()} miles
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Financial Details */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Refueling Invoice Metrics
-              </h4>
-
-              <div className="rounded-xl border border-border p-4 space-y-3.5 text-xs bg-card">
+              <div className="p-4 rounded-2xl border border-border bg-card space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground font-semibold">Price per Unit</span>
-                  <span className="font-bold text-foreground">{formatCurrency(record.pricePerUnit)} / L</span>
+                  <span className="text-muted-foreground">Registration:</span>
+                  <span className="font-mono font-bold text-foreground">
+                    {record.vehicle?.registrationNumber || 'UNIT-UNASSIGNED'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground font-semibold">Total Cost</span>
-                  <span className="font-bold text-foreground">{formatCurrency(record.totalCost)}</span>
+                  <span className="text-muted-foreground">Make / Model:</span>
+                  <span className="font-semibold text-foreground">
+                    {record.vehicle?.make} {record.vehicle?.model}
+                  </span>
                 </div>
-                <div className="border-t border-border/60 my-2 pt-2.5" />
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground font-semibold">Receipt / Ticket Number</span>
-                  <span className="font-bold text-foreground select-all">
-                    {record.stationLocation || '—'}
+                <div className="flex justify-between border-t border-border/40 pt-2">
+                  <span className="text-muted-foreground">Vehicle Status:</span>
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">
+                    {record.vehicle?.status || 'ACTIVE'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Notes */}
+            {/* Refueling Transaction Details */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <DollarSign className="h-3.5 w-3.5 text-emerald-500" />
+                Refueling Metrics
+              </h3>
+              <div className="p-4 rounded-2xl border border-border bg-card space-y-2.5">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fuel Station:</span>
+                  <span className="font-semibold text-foreground">{record.stationName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Volume Purchased:</span>
+                  <span className="font-mono font-bold text-foreground">{record.quantity} Gallons</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Unit Price:</span>
+                  <span className="font-mono font-bold text-foreground">${record.pricePerUnit.toFixed(2)} / Gal</span>
+                </div>
+                <div className="flex justify-between border-t border-border/40 pt-2">
+                  <span className="text-muted-foreground">Odometer Reading:</span>
+                  <span className="font-mono font-bold text-foreground">{record.odometerReading.toLocaleString()} miles</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Refuel Date:</span>
+                  <span className="font-mono text-foreground">{new Date(record.refueledAt).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Receipt & Notes */}
             {record.notes && (
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Remarks / Notes
-                </h4>
-                <div className="rounded-xl border border-border p-3.5 text-xs bg-card flex gap-2.5 items-start">
-                  <MessageSquare className="h-4 w-4 text-muted-foreground/60 shrink-0 mt-0.5" />
-                  <p className="text-muted-foreground leading-relaxed italic">{record.notes}</p>
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-amber-500" />
+                  Notes & Audit Record
+                </h3>
+                <div className="p-4 rounded-2xl border border-border bg-muted/20 text-muted-foreground text-xs leading-relaxed">
+                  {record.notes}
                 </div>
               </div>
             )}
+          </div>
 
-            {/* System Info */}
-            <div className="space-y-3 border-t border-border pt-5">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                System Metadata
-              </h4>
-
-              <div className="space-y-2.5 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground font-medium">Tenant Organization</span>
-                  <span className="font-semibold text-foreground">{record.company?.name || 'FleetCore Client'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground font-medium">Record Created</span>
-                  <span className="font-semibold text-foreground">
-                    {new Date(record.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground font-medium">Last Updated</span>
-                  <span className="font-semibold text-foreground">
-                    {new Date(record.updatedAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </span>
-                </div>
-              </div>
-            </div>
+          {/* Footer Action */}
+          <div className="p-4 border-t border-border bg-muted/20">
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 rounded-xl border border-input bg-card text-foreground font-bold text-xs hover:bg-muted transition-colors shadow-2xs"
+            >
+              Close Drawer
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
 export default FuelDetailsDrawer;
