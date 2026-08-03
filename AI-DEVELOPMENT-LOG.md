@@ -45,5 +45,18 @@ Implement the FleetCore Enterprise Administrator Dashboard using the Stitch MCP 
   - `PermissionBadge`: Color-coded action capability pills.
   - `RoleDrawer`: Slide-over detailed role drawer with permission editing.
   - `RoleSkeleton`, `RoleEmptyState`, `RoleErrorState`.
-- Created documentation at `docs/frontend/roles-permissions.md`.
+## [2026-08-03] SPEC-106: Enterprise Audit Logs Implementation
+- Implemented enterprise Audit Logs module based on Stitch MCP screen `Audit Logs - FleetCore`.
+- Created dedicated backend audit module (`backend/src/modules/audit/`) exposing `/api/v1/audit`, `/api/v1/audit/meta`, and `/api/v1/audit/:id` with strict `Administrator` role guard.
+- Built modular frontend audit components in `frontend/src/components/audit/`:
+  - `AuditHeader`: Header with KPI overview cards & CSV export ledger CTA.
+  - `AuditToolbar`: Search bar, filter toggle, and multi-layout view mode switcher (Timeline | Table | Cards).
+  - `AuditFilters`: Expandable filter panel (Module, Severity, Role, Status, User, Date Range).
+  - `AuditTimeline`: Connecting node timeline view of chronological audit events.
+  - `AuditTable`: Data table view with column sorting and user badges.
+  - `AuditCard`: High-density grid view card.
+  - `AuditDrawer`: Detailed inspection drawer showing raw metadata payloads, IP, device user agents, and user actors.
+  - `SeverityBadge`, `ModuleBadge`, `AuditSkeleton`, `AuditEmptyState`, `AuditErrorState`.
+- Created documentation at `docs/frontend/audit-logs.md` and `docs/backend/audit-module.md`.
+
 

@@ -830,3 +830,42 @@ model Notification {
   @@index([isRead])
   @@index([createdAt])
 }
+
+enum AuditSeverity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+/// --------------------------------------------
+/// AuditLog
+/// Represents an enterprise security and activity audit entry.
+/// --------------------------------------------
+model AuditLog {
+  id          String        @id @default(uuid())
+  timestamp   DateTime      @default(now())
+  userName    String
+  userEmail   String?
+  roleName    String
+  module      String
+  action      String
+  severity    AuditSeverity @default(INFO)
+  ipAddress   String?
+  device      String?
+  status      String        @default("SUCCESS")
+  description String
+  metadata    Json?
+  userId      String?
+  createdAt   DateTime      @default(now())
+
+  @@index([timestamp])
+  @@index([userName])
+  @@index([roleName])
+  @@index([module])
+  @@index([action])
+  @@index([severity])
+  @@index([status])
+}
+
