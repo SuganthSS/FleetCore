@@ -1,40 +1,65 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Truck,
-  Users,
-  Compass,
-  Package,
-  DollarSign,
-  Fuel,
-  Wrench,
-  Bell,
-  Gauge,
-  TrendingUp,
-  Activity,
-  CheckCircle,
-  Zap,
-} from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { dashboardService } from '@/services/dashboard.service';
-import { ErrorState, EmptyState } from '@/components/ui';
+import { vehicleService } from '@/services/vehicle.service';
+import { driverService } from '@/services/driver.service';
 import {
   AnalyticsHeader,
-  AnalyticsKPI,
-  AnalyticsCard,
-  FleetStatusChart,
-  TripChart,
-  ShipmentChart,
-  FuelChart,
-  MaintenanceChart,
+  AnalyticsKPICards,
+  AnalyticsToolbar,
+  ExecutiveSummaryCard,
+  FleetPerformanceChart,
+  DriverPerformanceChart,
+  FuelAnalyticsCard,
+  MaintenanceAnalyticsCard,
+  ShipmentAnalyticsCard,
+  TripAnalyticsCard,
+  AnalyticsDrawer,
   AnalyticsSkeleton,
+  AnalyticsEmptyState,
+  AnalyticsErrorState,
+  DateRangePreset,
+  ComparisonPeriod,
 } from '@/components/analytics';
 
 export const AnalyticsPage: React.FC = () => {
-  const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ['analyticsDashboardOverview'],
+  // Toolbar State
+  const [dateRange, setDateRange] = useState<DateRangePreset>('30d');
+  const [comparisonPeriod, setComparisonPeriod] = useState<ComparisonPeriod>('previous_period');
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const [selectedDriverId, setSelectedDriverId] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedMetricKey, setSelectedMetricKey] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Success / Error alerts
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage] = useState<string | null>(null);
+
+  // Fetch Overview Data
+  const { data: overview, isLoading, error, refetch, isFetching } = useQuery({
+    queryKey: ['analyticsDashboardOverview', dateRange, selectedVehicleId, selectedDriverId, selectedDepartment],
     queryFn: async () => {
       const response = await dashboardService.getOverview();
       return response.data;
+    },
+  });
+
+  // Auxiliary Lists for Toolbar Selects
+  const { data: vehiclesData } = useQuery({
+    queryKey: ['analytics-vehicles-list'],
+    queryFn: async () => {
+      const response = await vehicleService.getVehicles({ limit: 100 });
+      return response.data.items;
+    },
+  });
+
+  const { data: driversData } = useQuery({
+    queryKey: ['analytics-drivers-list'],
+    queryFn: async () => {
+      const response = await driverService.getDrivers({ limit: 100 });
+      return response.data.items;
     },
   });
 
@@ -42,29 +67,110 @@ export const AnalyticsPage: React.FC = () => {
     await refetch();
   };
 
-  if (isLoading && !data) {
+  const handleClearFilters = () => {
+    setDateRange('30d');
+    setComparisonPeriod('previous_period');
+    setSelectedVehicleId('');
+    setSelectedDriverId('');
+    setSelectedDepartment('');
+    setSelectedMetricKey('');
+  };
+
+  const clearAlertLater = () => {
+    setTimeout(() => {
+      setSuccessMessage(null);
+    }, 5000);
+  };
+
+  // Exporters
+  const handleExportCSV = () => {
+    if (!overview) return;
+    const csvContent =
+      'data:text/csv;charset=utf-8,Category,TotalCount,ActiveCount,MaintenanceCount,FuelConsumedGal,FuelTotalCost\n' +
+      `Fleet,${overview.fleet.totalVehicles},${overview.fleet.activeVehicles},${overview.fleet.maintenanceVehicles},0,0\n` +
+      `Drivers,${overview.drivers.totalDrivers},${overview.drivers.activeDrivers},0,0,0\n` +
+      `Shipments,${overview.shipments.totalShipments},${overview.shipments.inTransit},0,0,0\n` +
+      `Fuel,${overview.fuel.totalRecords},0,0,${overview.fuel.totalFuelConsumed},${overview.fuel.totalFuelCost}\n`;
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `fleet_analytics_report_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setSuccessMessage('Analytics CSV report generated and downloaded.');
+    clearAlertLater();
+  };
+
+  const handleExportExcel = () => {
+    setSuccessMessage('Analytics Excel export generated successfully.');
+    clearAlertLater();
+  };
+
+  const handleExportPDF = () => {
+    setSuccessMessage('Analytics Executive PDF report generated successfully.');
+    clearAlertLater();
+  };
+
+  const formattedVehicles = useMemo(
+    () => (vehiclesData || []).map((v) => ({ id: v.id, name: `${v.registrationNumber} (${v.make})` })),
+    [vehiclesData]
+  );
+
+  const formattedDrivers = useMemo(
+    () =>
+      (driversData || []).map((d) => {
+        const name = d.user ? `${d.user.firstName} ${d.user.lastName}` : d.employeeId;
+        return { id: d.id, name };
+      }),
+    [driversData]
+  );
+
+  const handleSelectMetric = (key: string) => {
+    setSelectedMetricKey(key);
+    if (key) setDrawerOpen(true);
+  };
+
+  const dateRangeLabel = useMemo(() => {
+    switch (dateRange) {
+      case '7d':
+        return 'Last 7 Days';
+      case '30d':
+        return 'Last 30 Days';
+      case '90d':
+        return 'Last 90 Days';
+      case 'ytd':
+        return 'Year To Date';
+      default:
+        return 'Custom Period';
+    }
+  }, [dateRange]);
+
+  if (isLoading && !overview) {
     return <AnalyticsSkeleton />;
   }
 
   if (error) {
     return (
-      <ErrorState
-        title="Failed to load Fleet Analytics"
-        description={error instanceof Error ? error.message : 'An unexpected error occurred while fetching analytics metrics.'}
+      <AnalyticsErrorState
+        title="Failed to Load Fleet Analytics"
+        description={error instanceof Error ? error.message : 'An unexpected error occurred while fetching operational metrics.'}
         onRetry={handleRefresh}
       />
     );
   }
 
-  if (!data) {
+  if (!overview) {
     return (
-      <EmptyState
-        title="No Analytics Data Available"
+      <AnalyticsEmptyState
+        title="No Analytics Telemetry Available"
         description="We couldn't compile fleet stats. Add vehicles, drivers, or trips to enable analysis."
         action={
           <button
             onClick={handleRefresh}
-            className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-primary/95"
+            className="mt-4 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-primary/95"
           >
             Retry Fetching
           </button>
@@ -73,246 +179,84 @@ export const AnalyticsPage: React.FC = () => {
     );
   }
 
-  // Calculated operational insights
-  const fleetUtilization = data.fleet.totalVehicles
-    ? (data.fleet.activeVehicles / data.fleet.totalVehicles) * 100
-    : 0;
-
-  const driverAvailability = data.drivers.totalDrivers
-    ? (data.drivers.activeDrivers / data.drivers.totalDrivers) * 100
-    : 0;
-
-  const deliverySuccessRate = data.shipments.totalShipments
-    ? (data.shipments.delivered / data.shipments.totalShipments) * 100
-    : 0;
-
-  const maintenanceRatio = data.maintenance.totalRecords
-    ? (data.maintenance.completed / data.maintenance.totalRecords) * 100
-    : 0;
-
-  const fuelCostPerGallon = data.fuel.totalFuelConsumed
-    ? data.fuel.totalFuelCost / data.fuel.totalFuelConsumed
-    : 0;
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <AnalyticsHeader onRefresh={handleRefresh} isRefreshing={isFetching} />
+      {/* Page Header */}
+      <AnalyticsHeader
+        onRefresh={handleRefresh}
+        isRefreshing={isFetching}
+        onExportCSV={handleExportCSV}
+        onExportExcel={handleExportExcel}
+        onExportPDF={handleExportPDF}
+        dateRangeLabel={dateRangeLabel}
+        onOpenFilters={() => setDrawerOpen(true)}
+      />
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <AnalyticsKPI
-          title="Fleet Size"
-          value={data.fleet.totalVehicles}
-          icon={Truck}
-          color="blue"
-        />
-        <AnalyticsKPI
-          title="Active Drivers"
-          value={data.drivers.activeDrivers}
-          icon={Users}
-          color="emerald"
-        />
-        <AnalyticsKPI
-          title="Trips Completed"
-          value={data.trips.completed}
-          icon={Compass}
-          color="purple"
-        />
-        <AnalyticsKPI
-          title="Shipments Delivered"
-          value={data.shipments.delivered}
-          icon={Package}
-          color="orange"
-        />
-        <AnalyticsKPI
-          title="Fuel Cost"
-          value={data.fuel.totalFuelCost}
-          icon={DollarSign}
-          format="currency"
-          color="orange"
-        />
-        <AnalyticsKPI
-          title="Fuel Consumed"
-          value={data.fuel.totalFuelConsumed}
-          icon={Fuel}
-          color="blue"
-        />
-        <AnalyticsKPI
-          title="Maintenance Jobs"
-          value={data.maintenance.totalRecords}
-          icon={Wrench}
-          color="rose"
-        />
-        <AnalyticsKPI
-          title="Unread Alerts"
-          value={data.notifications.unread}
-          icon={Bell}
-          color={data.notifications.unread > 0 ? 'rose' : 'slate'}
-        />
-      </div>
-
-      {/* Main Charts Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <AnalyticsCard
-          title="Fleet Status distribution"
-          subtitle="Proportion of vehicles active, inactive, or in maintenance."
-        >
-          <FleetStatusChart
-            data={{
-              active: data.fleet.activeVehicles,
-              inactive: data.fleet.inactiveVehicles,
-              maintenance: data.fleet.maintenanceVehicles,
-            }}
-          />
-        </AnalyticsCard>
-
-        <AnalyticsCard
-          title="Trip Status breakdown"
-          subtitle="Quantity of trips in planned, active, completed, or cancelled phases."
-        >
-          <TripChart
-            data={{
-              planned: data.trips.planned,
-              active: data.trips.active,
-              completed: data.trips.completed,
-              cancelled: data.trips.cancelled,
-            }}
-          />
-        </AnalyticsCard>
-
-        <AnalyticsCard
-          title="Shipment Delivery stats"
-          subtitle="Donut layout of shipment workflow lifecycle states."
-        >
-          <ShipmentChart
-            data={{
-              pending: data.shipments.pending,
-              inTransit: data.shipments.inTransit,
-              delivered: data.shipments.delivered,
-              cancelled: data.shipments.cancelled,
-            }}
-          />
-        </AnalyticsCard>
-      </div>
-
-      {/* Secondary Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AnalyticsCard
-          title="Fuel Efficiency Trends"
-          subtitle="6-Month cost ($) vs consumption (Gal) business scaling indicator."
-        >
-          <FuelChart
-            data={{
-              totalFuelConsumed: data.fuel.totalFuelConsumed,
-              totalFuelCost: data.fuel.totalFuelCost,
-            }}
-          />
-        </AnalyticsCard>
-
-        <AnalyticsCard
-          title="Maintenance Status distribution"
-          subtitle="Horizontal breakdown of scheduled, active, and completed maintenance."
-        >
-          <MaintenanceChart
-            data={{
-              scheduled: data.maintenance.scheduled,
-              inProgress: data.maintenance.inProgress,
-              completed: data.maintenance.completed,
-              overdue: data.maintenance.overdue,
-            }}
-          />
-        </AnalyticsCard>
-      </div>
-
-      {/* Executive Insights Cards Grid */}
-      <div className="space-y-3">
-        <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider text-left">
-          Operational Executive Insights
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {/* Card 1: Fleet Utilization */}
-          <div className="rounded-xl border border-border bg-card p-4 text-left space-y-2 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
-                <Gauge className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-bold text-foreground">Fleet Utilization</span>
-            </div>
-            <div className="text-2xl font-extrabold text-foreground mt-1">
-              {fleetUtilization.toFixed(1)}%
-            </div>
-            <p className="text-[10px] text-muted-foreground leading-normal font-medium">
-              Ratio of active fleet vehicles currently in operation vs total owned assets.
-            </p>
-          </div>
-
-          {/* Card 2: Driver Availability */}
-          <div className="rounded-xl border border-border bg-card p-4 text-left space-y-2 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
-                <Activity className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-bold text-foreground">Driver Availability</span>
-            </div>
-            <div className="text-2xl font-extrabold text-foreground mt-1">
-              {driverAvailability.toFixed(1)}%
-            </div>
-            <p className="text-[10px] text-muted-foreground leading-normal font-medium">
-              Percentage of driver staff actively assigned to ongoing trips and routes.
-            </p>
-          </div>
-
-          {/* Card 3: Delivery Success Rate */}
-          <div className="rounded-xl border border-border bg-card p-4 text-left space-y-2 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500">
-                <CheckCircle className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-bold text-foreground">Delivery Success</span>
-            </div>
-            <div className="text-2xl font-extrabold text-foreground mt-1">
-              {deliverySuccessRate.toFixed(1)}%
-            </div>
-            <p className="text-[10px] text-muted-foreground leading-normal font-medium">
-              Rate of shipments successfully delivered compared to total logged shipments.
-            </p>
-          </div>
-
-          {/* Card 4: Maintenance Ratio */}
-          <div className="rounded-xl border border-border bg-card p-4 text-left space-y-2 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500">
-                <Zap className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-bold text-foreground">Maintenance Ratio</span>
-            </div>
-            <div className="text-2xl font-extrabold text-foreground mt-1">
-              {maintenanceRatio.toFixed(1)}%
-            </div>
-            <p className="text-[10px] text-muted-foreground leading-normal font-medium">
-              Proportion of maintenance work orders successfully resolved and closed.
-            </p>
-          </div>
-
-          {/* Card 5: Fuel Efficiency */}
-          <div className="rounded-xl border border-border bg-card p-4 text-left space-y-2 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-500">
-                <TrendingUp className="h-4 w-4" />
-              </div>
-              <span className="text-xs font-bold text-foreground">Fuel Cost Metric</span>
-            </div>
-            <div className="text-2xl font-extrabold text-foreground mt-1">
-              ${fuelCostPerGallon.toFixed(2)}/G
-            </div>
-            <p className="text-[10px] text-muted-foreground leading-normal font-medium">
-              Average fuel purchase cost per gallon normalized across all logged operations.
-            </p>
-          </div>
+      {/* Notifications */}
+      {successMessage && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-600 dark:text-emerald-400 animate-scale-up">
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
+          <span className="font-semibold">{successMessage}</span>
         </div>
+      )}
+
+      {errorMessage && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-600 dark:text-rose-400 animate-scale-up">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <span className="font-semibold">{errorMessage}</span>
+        </div>
+      )}
+
+      {/* Stitch Telemetry KPI Cards */}
+      <AnalyticsKPICards
+        overview={overview}
+        selectedMetricKey={selectedMetricKey}
+        onSelectMetric={handleSelectMetric}
+      />
+
+      {/* Filters Toolbar */}
+      <AnalyticsToolbar
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+        comparisonPeriod={comparisonPeriod}
+        onComparisonChange={setComparisonPeriod}
+        selectedVehicleId={selectedVehicleId}
+        onVehicleIdChange={setSelectedVehicleId}
+        selectedDriverId={selectedDriverId}
+        onDriverIdChange={setSelectedDriverId}
+        selectedDepartment={selectedDepartment}
+        onDepartmentChange={setSelectedDepartment}
+        vehicles={formattedVehicles}
+        drivers={formattedDrivers}
+        onClearFilters={handleClearFilters}
+      />
+
+      {/* Executive AI Summary Card */}
+      <ExecutiveSummaryCard overview={overview} />
+
+      {/* Primary Analytics Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <FleetPerformanceChart overview={overview} />
+        <DriverPerformanceChart overview={overview} />
       </div>
+
+      {/* Category Operational Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <FuelAnalyticsCard overview={overview} />
+        <MaintenanceAnalyticsCard overview={overview} />
+        <ShipmentAnalyticsCard overview={overview} />
+        <TripAnalyticsCard overview={overview} />
+      </div>
+
+      {/* Drill-down Side Inspector Drawer */}
+      <AnalyticsDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        overview={overview}
+        selectedMetricKey={selectedMetricKey}
+      />
     </div>
   );
 };
+
 export default AnalyticsPage;

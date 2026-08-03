@@ -1,52 +1,95 @@
 import React from 'react';
-import { RefreshCw, Calendar } from 'lucide-react';
+import { BarChart3, RefreshCw, Download, Filter, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui';
 
 interface AnalyticsHeaderProps {
   onRefresh: () => void;
   isRefreshing?: boolean;
+  onExportCSV: () => void;
+  onExportExcel: () => void;
+  onExportPDF: () => void;
+  dateRangeLabel?: string;
+  onOpenFilters?: () => void;
 }
 
 export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   onRefresh,
-  isRefreshing = false,
+  isRefreshing,
+  onExportCSV,
+  onExportExcel,
+  onExportPDF,
+  dateRangeLabel = 'Last 30 Days',
+  onOpenFilters,
 }) => {
-  const currentDateStr = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-5">
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 rounded-2xl bg-card border border-border shadow-2xs">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Fleet Analytics
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Business intelligence and operational insights.
+        <div className="flex items-center gap-2.5">
+          <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+            <BarChart3 className="h-5 w-5" />
+          </div>
+          <h1 className="text-xl font-black text-foreground tracking-tight sm:text-2xl">
+            Enterprise Analytics & Operational Intelligence
+          </h1>
+          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-xs font-bold border border-emerald-500/20">
+            Live Telemetry
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          Executive performance dashboard summarizing fleet availability, driver scores, fuel efficiency, maintenance costs, and shipment SLAs.
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Date Display */}
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-2 text-xs font-semibold text-muted-foreground shadow-xs">
-          <Calendar className="h-4 w-4 text-primary" />
-          <span>{currentDateStr}</span>
+      <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-input bg-background text-xs font-bold text-foreground">
+          <Calendar className="h-3.5 w-3.5 text-primary" />
+          <span>{dateRangeLabel}</span>
         </div>
 
-        {/* Refresh Button */}
+        {onOpenFilters && (
+          <button
+            onClick={onOpenFilters}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-input bg-card text-foreground font-bold text-xs hover:bg-muted transition-colors shadow-2xs"
+          >
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            Filters
+          </button>
+        )}
+
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-foreground transition-all duration-150 disabled:opacity-50 hover:shadow-xs active:scale-95"
-          title="Refresh analytics data"
-          aria-label="Refresh analytics data"
+          className="p-2 rounded-xl border border-input bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+          title="Refresh Analytics Data"
         >
-          <RefreshCw className={`h-4.5 w-4.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
         </button>
+
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onExportCSV}
+            className="flex items-center gap-1 px-2.5 py-2 rounded-xl border border-input bg-card text-foreground font-bold text-xs hover:bg-muted transition-colors shadow-2xs"
+            title="Export CSV Data"
+          >
+            <Download className="h-3.5 w-3.5 text-blue-500" />
+            CSV
+          </button>
+          <button
+            onClick={onExportExcel}
+            className="flex items-center gap-1 px-2.5 py-2 rounded-xl border border-input bg-card text-foreground font-bold text-xs hover:bg-muted transition-colors shadow-2xs"
+            title="Export Excel Summary"
+          >
+            <Download className="h-3.5 w-3.5 text-emerald-500" />
+            Excel
+          </button>
+          <Button onClick={onExportPDF} className="flex items-center gap-1.5 text-xs font-bold">
+            <Download className="h-3.5 w-3.5" />
+            PDF Report
+          </Button>
+        </div>
       </div>
     </div>
   );
 };
+
 export default AnalyticsHeader;
