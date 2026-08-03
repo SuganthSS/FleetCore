@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { driverService } from '@/services/driver.service';
 import type { Driver, DriverAvailability, ExperienceLevel, CreateDriverPayload } from '@/types/driver';
+import { ConfirmDialog } from '@/components/ui';
 import {
-  PageHeader,
-  Button,
-  ErrorState,
-  EmptyState,
-  ConfirmDialog,
-} from '@/components/ui';
-import {
-  DriverTable,
+  DriverHeader,
+  DriverKPICards,
   DriverToolbar,
+  DriverTable,
+  DriverCards,
   DriverModal,
-  DriverDetailsDrawer,
+  DriverDrawer,
   DriverSkeleton,
 } from '@/components/driver';
+import { CheckCircle2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const DriversPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -29,6 +26,7 @@ export const DriversPage: React.FC = () => {
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // Modal / Drawer state
   const [modalOpen, setModalOpen] = useState(false);
@@ -40,7 +38,7 @@ export const DriversPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fetch Drivers
+  // Fetch Drivers with TanStack Query
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['drivers', search, availability, experienceLevel, page, limit, sortBy, sortOrder],
     queryFn: async () => {
@@ -56,6 +54,19 @@ export const DriversPage: React.FC = () => {
       return response.data;
     },
   });
+
+  // Calculate KPI Counts from cached drivers
+  const kpiData = {
+    total: data?.total || 0,
+    available: data?.items.filter((d) => d.availability === 'AVAILABLE').length || 0,
+    onTrip: data?.items.filter((d) => d.availability === 'ON_TRIP').length || 0,
+    offDuty: data?.items.filter((d) => d.availability === 'OFF_DUTY' || d.availability === 'ON_LEAVE').length || 0,
+    expiringLicense: data?.items.filter((d) => {
+      const days = Math.ceil((new Date(d.licenseExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      return days <= 30 && days >= 0;
+    }).length || 0,
+    suspended: data?.items.filter((d) => d.availability === 'SUSPENDED').length || 0,
+  };
 
   // Create Driver Mutation
   const createMutation = useMutation({
@@ -110,7 +121,6 @@ export const DriversPage: React.FC = () => {
     },
   });
 
-
   const clearAlertLater = () => {
     setTimeout(() => {
       setSuccessMessage(null);
@@ -147,7 +157,6 @@ export const DriversPage: React.FC = () => {
 
   const handleOpenDeleteDialog = (id: string) => {
     const driver = data?.items.find((d: Driver) => d.id === id);
-
     if (driver) {
       setSelectedDriver(driver);
       setDeleteDialogOpen(true);
@@ -177,11 +186,7 @@ export const DriversPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Drivers"
-          description="Manage your fleet's drivers and operators."
-        />
+      <div className="space-y-6 p-6">
         <DriverSkeleton />
       </div>
     );
@@ -189,18 +194,24 @@ export const DriversPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="py-10">
-        <ErrorState
-          title="Failed to Load Drivers"
-          description={error instanceof Error ? error.message : 'Could not retrieve driver records from backend.'}
-          onRetry={() => void refetch()}
-        />
+      <div className="p-10 flex flex-col items-center justify-center text-center space-y-4">
+        <div className="p-4 rounded-full bg-destructive/10 text-destructive">
+          <AlertCircle className="h-8 w-8" />
+        </div>
+        <h2 className="text-lg font-bold text-foreground">Failed to Load Driver Directory</h2>
+        <p className="text-xs text-muted-foreground max-w-sm">
+          {error instanceof Error ? error.message : 'An error occurred while connecting to the driver service.'}
+        </p>
+        <button
+          onClick={() => void refetch()}
+          className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:bg-primary/90 transition-colors"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
 
-  // Backends paginatedResult: { items, total, page, limit, totalPages }
-  // Tanstack query response is response which is data.data in driverService.getDrivers
   const pagination = data
     ? {
         total: data.total,
@@ -213,29 +224,35 @@ export const DriversPage: React.FC = () => {
     : null;
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        title="Drivers"
-        description="Manage your fleet's drivers and operators."
-        actions={
-          <Button onClick={handleOpenAddModal} className="gap-2 shadow-sm">
-            <Plus className="h-4 w-4" />
-            Add Driver
-          </Button>
-        }
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <DriverHeader
+        totalDrivers={data?.total || 0}
+        onAddDriver={handleOpenAddModal}
+        onRefresh={() => void refetch()}
+        isRefreshing={isFetching}
+      />
+
+      {/* KPI Cards */}
+      <DriverKPICards
+        data={kpiData}
+        activeFilter={availability}
+        onFilterChange={(val) => {
+          setAvailability(val);
+          setPage(1);
+        }}
       />
 
       {/* Alerts */}
       {successMessage && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-600 dark:text-emerald-400 animate-slide-up">
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
           <CheckCircle2 className="h-4.5 w-4.5 shrink-0" />
           <span>{successMessage}</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-slide-up">
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-xs font-semibold text-destructive">
           <AlertCircle className="h-4.5 w-4.5 shrink-0" />
           <span>{errorMessage}</span>
         </div>
@@ -258,42 +275,55 @@ export const DriversPage: React.FC = () => {
           setExperienceLevel(val);
           setPage(1);
         }}
-        onRefresh={() => void refetch()}
+        sortBy={sortBy}
+        onSortByChange={(val) => {
+          setSortBy(val);
+          setPage(1);
+        }}
+        sortOrder={sortOrder}
+        onSortOrderChange={(val) => setSortOrder(val)}
+        viewMode={viewMode}
+        onViewModeChange={(mode) => setViewMode(mode)}
         onClearFilters={handleClearFilters}
-        isRefreshing={isFetching}
       />
 
-      {/* Data Table */}
+      {/* Data Views */}
       {data && data.items.length > 0 ? (
         <div className="space-y-4">
-          <DriverTable
-            drivers={data.items}
-            onView={handleOpenDetailsDrawer}
-            onEdit={handleOpenEditModal}
-            onDelete={handleOpenDeleteDialog}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          />
+          {viewMode === 'table' ? (
+            <DriverTable
+              drivers={data.items}
+              onView={handleOpenDetailsDrawer}
+              onEdit={handleOpenEditModal}
+              onDelete={handleOpenDeleteDialog}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+            />
+          ) : (
+            <DriverCards
+              drivers={data.items}
+              onView={handleOpenDetailsDrawer}
+              onEdit={handleOpenEditModal}
+              onDelete={handleOpenDeleteDialog}
+            />
+          )}
 
-          {/* Pagination Footer */}
+          {/* Pagination */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm">
+            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-xs">
               <span className="text-xs text-muted-foreground font-medium">
                 Showing {pagination.start} to {pagination.end} of {pagination.total} drivers
               </span>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
                   onClick={() => setPage((p) => Math.max(p - 1, 1))}
                   disabled={page === 1}
-                  className="h-8.5 px-3"
-                  aria-label="Previous Page"
+                  className="px-3 py-1.5 rounded-lg border border-input bg-background text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-40 transition-colors flex items-center gap-1"
                 >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  <ChevronLeft className="h-3.5 w-3.5" />
                   Previous
-                </Button>
+                </button>
                 <div className="flex items-center gap-1">
                   {[...Array(pagination.totalPages)].map((_, idx) => {
                     const pageNum = idx + 1;
@@ -301,53 +331,53 @@ export const DriversPage: React.FC = () => {
                       <button
                         key={pageNum}
                         onClick={() => setPage(pageNum)}
-                        className={`h-8.5 w-8.5 rounded-lg text-xs font-semibold transition-colors ${
+                        className={`h-8 w-8 rounded-lg text-xs font-bold transition-colors ${
                           page === pageNum
-                            ? 'bg-primary text-white'
+                            ? 'bg-primary text-primary-foreground'
                             : 'bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground'
                         }`}
-                        aria-label={`Page ${pageNum}`}
                       >
                         {pageNum}
                       </button>
                     );
                   })}
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
                   onClick={() => setPage((p) => Math.min(p + 1, pagination.totalPages))}
                   disabled={page === pagination.totalPages}
-                  className="h-8.5 px-3"
-                  aria-label="Next Page"
+                  className="px-3 py-1.5 rounded-lg border border-input bg-background text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-40 transition-colors flex items-center gap-1"
                 >
                   Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
           )}
         </div>
       ) : (
-        <EmptyState
-          title="No drivers found"
-          description={
-            search || availability || experienceLevel
-              ? 'Try adjusting your search criteria or resetting filters.'
-              : 'Add driver profiles to start assigning them to vehicles and shipments.'
-          }
-          action={
-            (search || availability || experienceLevel) ? (
-              <Button variant="outline" size="sm" onClick={handleClearFilters}>
-                Clear All Filters
-              </Button>
-            ) : (
-              <Button size="sm" onClick={handleOpenAddModal}>
-                + Add First Driver
-              </Button>
-            )
-          }
-        />
+        <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center space-y-3">
+          <p className="text-sm font-bold text-foreground">No drivers found</p>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            {search || availability || experienceLevel
+              ? 'Try adjusting your search query or reset active filters.'
+              : 'Create driver profiles to start assigning them to fleet operations.'}
+          </p>
+          {search || availability || experienceLevel ? (
+            <button
+              onClick={handleClearFilters}
+              className="px-4 py-2 rounded-lg border border-input text-xs font-bold text-foreground hover:bg-muted transition-colors"
+            >
+              Clear Filters
+            </button>
+          ) : (
+            <button
+              onClick={handleOpenAddModal}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:bg-primary/90 transition-colors"
+            >
+              + Add First Driver
+            </button>
+          )}
+        </div>
       )}
 
       {/* Add / Edit Modal */}
@@ -360,7 +390,7 @@ export const DriversPage: React.FC = () => {
       />
 
       {/* Details Slide-out Drawer */}
-      <DriverDetailsDrawer
+      <DriverDrawer
         open={drawerOpen}
         driver={selectedDriver}
         onClose={() => setDrawerOpen(false)}
@@ -385,4 +415,5 @@ export const DriversPage: React.FC = () => {
     </div>
   );
 };
+
 export default DriversPage;

@@ -8,6 +8,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { VehiclesPage } from '@/pages/VehiclesPage';
 import { VehicleDetailsPage } from '@/pages/VehicleDetailsPage';
 import { DriversPage } from '@/pages/DriversPage';
+import { DriverProfilePage } from '@/pages/DriverProfilePage';
 import { CustomersPage } from '@/pages/CustomersPage';
 import { ShipmentsPage } from '@/pages/ShipmentsPage';
 import { RoutesPage } from '@/pages/RoutesPage';
@@ -81,6 +82,10 @@ const router = createBrowserRouter([
           {
             path: '/drivers',
             element: <DriversPage />,
+          },
+          {
+            path: '/drivers/:id',
+            element: <DriverProfilePage />,
           },
           {
             path: '/customers',
