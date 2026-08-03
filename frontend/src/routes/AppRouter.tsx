@@ -27,6 +27,7 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { UsersPage } from '@/pages/UsersPage';
 import { RolesPermissionsPage } from '@/pages/RolesPermissionsPage';
 import { AuditLogsPage } from '@/pages/AuditLogsPage';
+import { AIInsightsPage } from '@/pages/AIInsightsPage';
 import { LoginPage } from '@/pages/LoginPage';
 
 
@@ -142,6 +143,10 @@ const router = createBrowserRouter([
           {
             path: '/analytics',
             element: <AnalyticsPage />,
+          },
+          {
+            path: '/ai-insights',
+            element: <AIInsightsPage />,
           },
           {
             path: '/reports',

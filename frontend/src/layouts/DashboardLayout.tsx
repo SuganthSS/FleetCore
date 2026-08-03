@@ -17,6 +17,7 @@ import {
   Settings,
   ShieldCheck,
   Activity,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -42,6 +43,7 @@ const navItems: NavItem[] = [
   { name: 'GPS Tracking', path: '/tracking', icon: Navigation },
   { name: 'Notifications', path: '/notifications', icon: Bell },
   { name: 'Analytics', path: '/analytics', icon: TrendingUp },
+  { name: 'AI Insights', path: '/ai-insights', icon: Sparkles },
   { name: 'Reports', path: '/reports', icon: FileText },
   { name: 'Settings', path: '/settings', icon: Settings },
 ];
