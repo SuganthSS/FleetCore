@@ -1,28 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { customerService } from '@/services/customer.service';
 import type { Customer, CustomerStatus, CreateCustomerPayload } from '@/types/customer';
 import { getCustomerType } from '@/utils/customer';
+import { Button, ErrorState, EmptyState, ConfirmDialog } from '@/components/ui';
 import {
-  PageHeader,
-  Button,
-  ErrorState,
-  EmptyState,
-  ConfirmDialog,
-} from '@/components/ui';
-import {
-  CustomerTable,
+  CustomerHeader,
+  CustomerKPICards,
   CustomerToolbar,
+  CustomerTable,
+  CustomerCards,
   CustomerModal,
-  CustomerDetailsDrawer,
+  CustomerDrawer,
   CustomerSkeleton,
 } from '@/components/customer';
 
 export const CustomersPage: React.FC = () => {
   const queryClient = useQueryClient();
 
-  // Search & Filter state
+  // Search & Filter & View state
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
@@ -30,6 +27,7 @@ export const CustomersPage: React.FC = () => {
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // Modal / Drawer state
   const [modalOpen, setModalOpen] = useState(false);
@@ -56,6 +54,19 @@ export const CustomersPage: React.FC = () => {
       return response.data;
     },
   });
+
+  // Calculate KPI Summary
+  const kpiData = useMemo(() => {
+    const items = data?.items || [];
+    const total = data?.total || 0;
+    const active = items.filter((i) => i.status === 'ACTIVE').length;
+    const inactive = items.filter((i) => i.status !== 'ACTIVE').length;
+    const vip = items.filter((i) => getCustomerType(i.id) === 'VIP').length;
+    const corporate = items.filter((i) => getCustomerType(i.id) === 'CORPORATE').length;
+    const individual = items.filter((i) => getCustomerType(i.id) === 'INDIVIDUAL').length;
+
+    return { total, active, inactive, vip, corporate, individual };
+  }, [data]);
 
   // Create Customer Mutation
   const createMutation = useMutation({
@@ -172,15 +183,7 @@ export const CustomersPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Customers"
-          description="Manage customers, business partners and client organizations."
-        />
-        <CustomerSkeleton />
-      </div>
-    );
+    return <CustomerSkeleton />;
   }
 
   if (error) {
@@ -216,28 +219,39 @@ export const CustomersPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        title="Customers"
-        description="Manage customers, business partners and client organizations."
-        actions={
-          <Button onClick={handleOpenAddModal} className="gap-2 shadow-sm">
-            <Plus className="h-4 w-4" />
-            Add Customer
-          </Button>
-        }
+      {/* Customer Header */}
+      <CustomerHeader
+        totalCustomers={data?.total || 0}
+        onAddCustomer={handleOpenAddModal}
+        onRefresh={() => void refetch()}
+        isRefreshing={isFetching}
+      />
+
+      {/* KPI Metrics Cards */}
+      <CustomerKPICards
+        data={kpiData}
+        activeStatusFilter={status}
+        activeTypeFilter={type}
+        onStatusFilterChange={(val) => {
+          setStatus(val);
+          setPage(1);
+        }}
+        onTypeFilterChange={(val) => {
+          setType(val);
+          setPage(1);
+        }}
       />
 
       {/* Alerts */}
       {successMessage && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-600 dark:text-emerald-400 animate-slide-up">
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-xs font-bold text-emerald-600 dark:text-emerald-400">
           <CheckCircle2 className="h-4.5 w-4.5 shrink-0" />
           <span>{successMessage}</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-slide-up">
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-xs font-bold text-destructive">
           <AlertCircle className="h-4.5 w-4.5 shrink-0" />
           <span>{errorMessage}</span>
         </div>
@@ -260,27 +274,43 @@ export const CustomersPage: React.FC = () => {
           setType(val);
           setPage(1);
         }}
-        onRefresh={() => void refetch()}
+        sortBy={sortBy}
+        onSortByChange={(val) => {
+          setSortBy(val);
+          setPage(1);
+        }}
+        sortOrder={sortOrder}
+        onSortOrderChange={(val) => setSortOrder(val)}
+        viewMode={viewMode}
+        onViewModeChange={(mode) => setViewMode(mode)}
         onClearFilters={handleClearFilters}
-        isRefreshing={isFetching}
       />
 
-      {/* Data Table */}
+      {/* Data View */}
       {data && displayItems.length > 0 ? (
         <div className="space-y-4">
-          <CustomerTable
-            customers={displayItems}
-            onView={handleOpenDetailsDrawer}
-            onEdit={handleOpenEditModal}
-            onDelete={handleOpenDeleteDialog}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          />
+          {viewMode === 'table' ? (
+            <CustomerTable
+              customers={displayItems}
+              onView={handleOpenDetailsDrawer}
+              onEdit={handleOpenEditModal}
+              onDelete={handleOpenDeleteDialog}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+            />
+          ) : (
+            <CustomerCards
+              customers={displayItems}
+              onView={handleOpenDetailsDrawer}
+              onEdit={handleOpenEditModal}
+              onDelete={handleOpenDeleteDialog}
+            />
+          )}
 
           {/* Pagination Footer */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm">
+            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl shadow-xs">
               <span className="text-xs text-muted-foreground font-medium">
                 Showing {pagination.start} to {pagination.end} of {pagination.total} customers
               </span>
@@ -290,8 +320,7 @@ export const CustomersPage: React.FC = () => {
                   size="sm"
                   onClick={() => setPage((p) => Math.max(p - 1, 1))}
                   disabled={page === 1}
-                  className="h-8.5 px-3"
-                  aria-label="Previous Page"
+                  className="h-8.5 px-3 text-xs"
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   Previous
@@ -303,12 +332,11 @@ export const CustomersPage: React.FC = () => {
                       <button
                         key={pageNum}
                         onClick={() => setPage(pageNum)}
-                        className={`h-8.5 w-8.5 rounded-lg text-xs font-semibold transition-colors ${
+                        className={`h-8 w-8 rounded-lg text-xs font-semibold transition-colors ${
                           page === pageNum
-                            ? 'bg-primary text-white'
-                            : 'bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground'
+                            ? 'bg-primary text-white font-bold'
+                            : 'bg-transparent text-muted-foreground hover:bg-muted'
                         }`}
-                        aria-label={`Page ${pageNum}`}
                       >
                         {pageNum}
                       </button>
@@ -320,8 +348,7 @@ export const CustomersPage: React.FC = () => {
                   size="sm"
                   onClick={() => setPage((p) => Math.min(p + 1, pagination.totalPages))}
                   disabled={page === pagination.totalPages}
-                  className="h-8.5 px-3"
-                  aria-label="Next Page"
+                  className="h-8.5 px-3 text-xs"
                 >
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />
@@ -362,7 +389,7 @@ export const CustomersPage: React.FC = () => {
       />
 
       {/* Details Slide-out Drawer */}
-      <CustomerDetailsDrawer
+      <CustomerDrawer
         open={drawerOpen}
         customer={selectedCustomer}
         onClose={() => setDrawerOpen(false)}
@@ -387,4 +414,5 @@ export const CustomersPage: React.FC = () => {
     </div>
   );
 };
+
 export default CustomersPage;

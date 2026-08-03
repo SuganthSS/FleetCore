@@ -1,133 +1,51 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 import type { Customer, CreateCustomerPayload } from '@/types/customer';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/button';
+
+const customerSchema = z.object({
+  customerCode: z.string().min(2, 'Customer code is required (min 2 chars)'),
+  companyName: z.string().min(2, 'Company name is required'),
+  contactPerson: z.string().optional(),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
+  postalCode: z.string().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION'] as const),
+});
+
+type CustomerFormValues = z.infer<typeof customerSchema>;
 
 interface CustomerModalProps {
   open: boolean;
   customer: Customer | null;
   onClose: () => void;
-  onSubmit: (data: CreateCustomerPayload) => void;
+  onSubmit: (payload: CreateCustomerPayload) => void;
   loading?: boolean;
 }
-
-const customerValidationSchema = z.object({
-  companyName: z
-    .string()
-    .trim()
-    .min(1, 'Customer / Company name is required')
-    .max(200, 'Company name must be 200 characters max'),
-  customerCode: z
-    .string()
-    .trim()
-    .min(1, 'Customer code is required')
-    .max(50, 'Customer code must be 50 characters max'),
-  customerType: z.enum(['CORPORATE', 'INDIVIDUAL', 'PARTNER']),
-  contactPerson: z
-    .string()
-    .trim()
-    .max(100, 'Contact person name must be 100 characters max')
-    .optional()
-    .nullable(),
-  email: z
-    .string()
-    .trim()
-    .min(1, 'Email is required')
-    .email('Invalid email address format'),
-  phone: z
-    .string()
-    .trim()
-    .max(20, 'Phone must be 20 characters max')
-    .optional()
-    .nullable(),
-  address: z
-    .string()
-    .trim()
-    .max(300, 'Address must be 300 characters max')
-    .optional()
-    .nullable(),
-  city: z
-    .string()
-    .trim()
-    .max(100, 'City must be 100 characters max')
-    .optional()
-    .nullable(),
-  state: z
-    .string()
-    .trim()
-    .max(100, 'State must be 100 characters max')
-    .optional()
-    .nullable(),
-  country: z
-    .string()
-    .trim()
-    .max(100, 'Country must be 100 characters max')
-    .optional()
-    .nullable(),
-  postalCode: z
-    .string()
-    .trim()
-    .max(20, 'Postal code must be 20 characters max')
-    .optional()
-    .nullable(),
-  status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION']),
-});
-
-type CustomerFormValues = z.infer<typeof customerValidationSchema>;
 
 export const CustomerModal: React.FC<CustomerModalProps> = ({
   open,
   customer,
   onClose,
   onSubmit,
-  loading = false,
+  loading,
 }) => {
-  const { user } = useAuth();
-  const isEdit = !!customer;
-
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
   } = useForm<CustomerFormValues>({
-    resolver: zodResolver(customerValidationSchema),
-    defaultValues: {
-      companyName: '',
-      customerCode: '',
-      customerType: 'CORPORATE',
-      contactPerson: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      country: '',
-      postalCode: '',
-      status: 'ACTIVE',
-    },
-  });
-
-  useEffect(() => {
-    if (open) {
-      if (customer) {
-        // Derive type from id for form display consistency
-        let score = 0;
-        for (let i = 0; i < customer.id.length; i++) {
-          score += customer.id.charCodeAt(i);
-        }
-        const types: Array<'CORPORATE' | 'INDIVIDUAL' | 'PARTNER'> = ['CORPORATE', 'INDIVIDUAL', 'PARTNER'];
-        const derivedType = types[score % 3];
-
-        reset({
-          companyName: customer.companyName,
+    resolver: zodResolver(customerSchema),
+    values: customer
+      ? {
           customerCode: customer.customerCode,
-          customerType: derivedType,
+          companyName: customer.companyName,
           contactPerson: customer.contactPerson || '',
           email: customer.email,
           phone: customer.phone || '',
@@ -137,12 +55,10 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           country: customer.country || '',
           postalCode: customer.postalCode || '',
           status: customer.status,
-        });
-      } else {
-        reset({
+        }
+      : {
+          customerCode: `CUST-${Math.floor(1000 + Math.random() * 9000)}`,
           companyName: '',
-          customerCode: '',
-          customerType: 'CORPORATE',
           contactPerson: '',
           email: '',
           phone: '',
@@ -152,193 +68,169 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           country: '',
           postalCode: '',
           status: 'ACTIVE',
-        });
-      }
-    }
-  }, [open, customer, reset]);
+        },
+  });
 
   if (!open) return null;
 
   const handleFormSubmit = (values: CustomerFormValues) => {
     onSubmit({
       ...values,
-      contactPerson: values.contactPerson || null,
-      phone: values.phone || null,
-      address: values.address || null,
-      city: values.city || null,
-      state: values.state || null,
-      country: values.country || null,
-      postalCode: values.postalCode || null,
-      companyId: customer?.companyId || user?.companyId || '',
+      companyId: customer?.companyId || 'company-default-id',
     });
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Dialog Container */}
-      <div className="relative w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-xl z-10 animate-scale-up max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-background/80 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="relative w-full max-w-lg rounded-2xl border border-border bg-card shadow-2xl overflow-hidden animate-in zoom-in-95">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border pb-4 mb-5">
-          <h2 className="text-lg font-bold text-foreground">
-            {isEdit ? 'Edit Customer' : 'Add Customer'}
-          </h2>
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <div>
+            <h2 className="text-lg font-bold text-foreground">
+              {customer ? 'Edit Customer Profile' : 'Add New Customer Account'}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Enter organizational contact and billing profile specifications.
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            aria-label="Close dialog"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        {/* Form Body */}
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-4 text-xs">
           <div className="grid grid-cols-2 gap-4">
-            {/* Customer Name */}
-            <Input
-              label="Customer Name"
-              error={errors.companyName?.message}
-              {...register('companyName')}
-              placeholder="e.g. Acme Corp"
-            />
-
-            {/* Customer Code */}
-            <Input
-              label="Customer Code"
-              error={errors.customerCode?.message}
-              {...register('customerCode')}
-              placeholder="e.g. ACM-01"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Customer Type */}
-            <div className="space-y-1.5 text-left">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Customer Type
-              </label>
-              <select
-                {...register('customerType')}
-                className="flex h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="CORPORATE">Corporate</option>
-                <option value="INDIVIDUAL">Individual</option>
-                <option value="PARTNER">Partner</option>
-              </select>
+            <div>
+              <label className="block font-bold text-foreground mb-1">Customer Code *</label>
+              <input
+                {...register('customerCode')}
+                className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono text-xs"
+                placeholder="e.g. CUST-104"
+              />
+              {errors.customerCode && (
+                <span className="text-[10px] text-destructive mt-1 block">
+                  {errors.customerCode.message}
+                </span>
+              )}
             </div>
 
-            {/* Status */}
-            <div className="space-y-1.5 text-left">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Status
-              </label>
+            <div>
+              <label className="block font-bold text-foreground mb-1">Account Status *</label>
               <select
                 {...register('status')}
-                className="flex h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 text-xs"
               >
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
                 <option value="SUSPENDED">Suspended</option>
-                <option value="PENDING_VERIFICATION">Pending</option>
+                <option value="PENDING_VERIFICATION">Pending Verification</option>
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Contact Person */}
-            <Input
-              label="Contact Person"
-              error={errors.contactPerson?.message}
-              {...register('contactPerson')}
-              placeholder="Full name"
+          <div>
+            <label className="block font-bold text-foreground mb-1">Company / Organization Name *</label>
+            <input
+              {...register('companyName')}
+              className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs"
+              placeholder="Apex Freight Logistics Corp"
             />
-
-            {/* Phone */}
-            <Input
-              label="Phone Number"
-              error={errors.phone?.message}
-              {...register('phone')}
-              placeholder="e.g. +1-555-0199"
-            />
-          </div>
-
-          {/* Email */}
-          <Input
-            label="Email Address"
-            type="email"
-            error={errors.email?.message}
-            {...register('email')}
-            placeholder="e.g. contact@acme.com"
-          />
-
-          {/* Address */}
-          <Input
-            label="Street Address"
-            error={errors.address?.message}
-            {...register('address')}
-            placeholder="e.g. 123 Main St"
-          />
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* City */}
-            <Input
-              label="City"
-              error={errors.city?.message}
-              {...register('city')}
-              placeholder="City"
-            />
-
-            {/* State */}
-            <Input
-              label="State / Province"
-              error={errors.state?.message}
-              {...register('state')}
-              placeholder="State"
-            />
+            {errors.companyName && (
+              <span className="text-[10px] text-destructive mt-1 block">
+                {errors.companyName.message}
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {/* Country */}
-            <Input
-              label="Country"
-              error={errors.country?.message}
-              {...register('country')}
-              placeholder="Country"
-            />
+            <div>
+              <label className="block font-bold text-foreground mb-1">Primary Contact Person</label>
+              <input
+                {...register('contactPerson')}
+                className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 text-xs"
+                placeholder="Jane Doe"
+              />
+            </div>
 
-            {/* Postal Code */}
-            <Input
-              label="Postal Code"
-              error={errors.postalCode?.message}
-              {...register('postalCode')}
-              placeholder="ZIP / Postal code"
-            />
+            <div>
+              <label className="block font-bold text-foreground mb-1">Email Address *</label>
+              <input
+                {...register('email')}
+                type="email"
+                className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 text-xs"
+                placeholder="billing@apexlogistics.com"
+              />
+              {errors.email && (
+                <span className="text-[10px] text-destructive mt-1 block">
+                  {errors.email.message}
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <Button
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block font-bold text-foreground mb-1">Phone Number</label>
+              <input
+                {...register('phone')}
+                className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 text-xs"
+                placeholder="+1 (555) 019-2834"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-foreground mb-1">City</label>
+              <input
+                {...register('city')}
+                className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 text-xs"
+                placeholder="Chicago"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block font-bold text-foreground mb-1">Country</label>
+              <input
+                {...register('country')}
+                className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 text-xs"
+                placeholder="United States"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-foreground mb-1">Postal Code</label>
+              <input
+                {...register('postalCode')}
+                className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary/20 text-xs"
+                placeholder="60601"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+            <button
               type="button"
-              variant="outline"
               onClick={onClose}
-              disabled={loading}
+              className="px-4 py-2 rounded-xl border border-input bg-card text-foreground hover:bg-muted font-bold text-xs transition-colors"
             >
               Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Submitting...' : isEdit ? 'Save Changes' : 'Add Customer'}
-            </Button>
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-5 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-xs hover:bg-primary/90 disabled:opacity-50 transition-colors shadow-md"
+            >
+              {loading ? 'Saving...' : customer ? 'Update Customer' : 'Create Customer'}
+            </button>
           </div>
         </form>
       </div>
     </div>
   );
 };
+
 export default CustomerModal;
