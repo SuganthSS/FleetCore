@@ -1,45 +1,67 @@
 import React from 'react';
-import type { ShipmentPriority } from '@/types/shipment';
+import { ShipmentPriority } from '@/types/shipment';
+import { AlertCircle, ArrowUp, Minus, AlertTriangle } from 'lucide-react';
 
 interface ShipmentPriorityBadgeProps {
   priority: ShipmentPriority;
+  size?: 'sm' | 'md';
 }
 
-export const ShipmentPriorityBadge: React.FC<ShipmentPriorityBadgeProps> = ({ priority }) => {
-  const getStyles = () => {
-    switch (priority) {
-      case 'LOW':
-        return 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20';
-      case 'MEDIUM':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20';
-      case 'HIGH':
-        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20';
-      case 'URGENT':
-        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20';
-      default:
-        return 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20';
-    }
+const priorityConfig: Record<
+  ShipmentPriority,
+  { label: string; bg: string; text: string; icon: React.FC<{ className?: string }> }
+> = {
+  LOW: {
+    label: 'Low Priority',
+    bg: 'bg-muted border-border',
+    text: 'text-muted-foreground',
+    icon: Minus,
+  },
+  MEDIUM: {
+    label: 'Medium',
+    bg: 'bg-blue-500/10 border-blue-500/20',
+    text: 'text-blue-700 dark:text-blue-400',
+    icon: ArrowUp,
+  },
+  HIGH: {
+    label: 'High Priority',
+    bg: 'bg-amber-500/10 border-amber-500/20',
+    text: 'text-amber-700 dark:text-amber-400',
+    icon: AlertTriangle,
+  },
+  URGENT: {
+    label: 'URGENT FREIGHT',
+    bg: 'bg-destructive/10 border-destructive/20',
+    text: 'text-destructive font-black',
+    icon: AlertCircle,
+  },
+};
+
+export const ShipmentPriorityBadge: React.FC<ShipmentPriorityBadgeProps> = ({
+  priority,
+  size = 'md',
+}) => {
+  const config = priorityConfig[priority] || {
+    label: priority,
+    bg: 'bg-muted border-border',
+    text: 'text-muted-foreground',
+    icon: Minus,
   };
 
-  const getLabel = () => {
-    switch (priority) {
-      case 'LOW':
-        return 'Low';
-      case 'MEDIUM':
-        return 'Medium';
-      case 'HIGH':
-        return 'High';
-      case 'URGENT':
-        return 'Urgent';
-      default:
-        return priority;
-    }
-  };
+  const Icon = config.icon;
+  const sizeClasses =
+    size === 'sm'
+      ? 'px-2 py-0.5 text-[10px] gap-1'
+      : 'px-2.5 py-1 text-xs gap-1.5';
 
   return (
-    <span className={`inline-flex items-center rounded-lg px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase select-none transition-colors duration-150 ${getStyles()}`}>
-      {getLabel()}
+    <span
+      className={`inline-flex items-center rounded-md font-semibold border ${config.bg} ${config.text} ${sizeClasses}`}
+    >
+      <Icon className={size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
+      {config.label}
     </span>
   );
 };
+
 export default ShipmentPriorityBadge;

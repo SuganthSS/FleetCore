@@ -1,28 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { shipmentService } from '@/services/shipment.service';
 import { customerService } from '@/services/customer.service';
 import type { Shipment, ShipmentStatus, ShipmentPriority, CreateShipmentPayload } from '@/types/shipment';
+import { Button, ConfirmDialog } from '@/components/ui';
 import {
-  PageHeader,
-  Button,
-  ErrorState,
-  EmptyState,
-  ConfirmDialog,
-} from '@/components/ui';
-import {
-  ShipmentTable,
+  ShipmentHeader,
+  ShipmentKPICards,
   ShipmentToolbar,
+  ShipmentTable,
+  ShipmentCards,
+  ShipmentDrawer,
   ShipmentModal,
-  ShipmentDetailsDrawer,
   ShipmentSkeleton,
+  ShipmentEmptyState,
+  ShipmentErrorState,
 } from '@/components/shipment';
 
 export const ShipmentsPage: React.FC = () => {
   const queryClient = useQueryClient();
 
-  // Search & Filter state
+  // Search, Filter & View state
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
@@ -31,8 +30,9 @@ export const ShipmentsPage: React.FC = () => {
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
-  // Modal / Drawer state
+  // Modal / Drawer / Dialog state
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -42,7 +42,7 @@ export const ShipmentsPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fetch Customers for select dropdown options
+  // Fetch Customers for selection dropdowns
   const { data: customersData } = useQuery({
     queryKey: ['customers-list-all'],
     queryFn: async () => {
@@ -75,6 +75,20 @@ export const ShipmentsPage: React.FC = () => {
       return response.data;
     },
   });
+
+  // Calculate KPI Summary
+  const kpiData = useMemo(() => {
+    const items = data?.items || [];
+    const total = data?.total || 0;
+    const pending = items.filter((i) => i.status === 'PENDING').length;
+    const dispatched = items.filter((i) => i.status === 'DISPATCHED').length;
+    const inTransit = items.filter((i) => i.status === 'IN_TRANSIT').length;
+    const delivered = items.filter((i) => i.status === 'DELIVERED').length;
+    const cancelled = items.filter((i) => i.status === 'CANCELLED').length;
+    const failed = items.filter((i) => i.status === 'FAILED').length;
+
+    return { total, pending, dispatched, inTransit, delivered, cancelled, failed };
+  }, [data]);
 
   // Create Shipment Mutation
   const createMutation = useMutation({
@@ -190,48 +204,63 @@ export const ShipmentsPage: React.FC = () => {
     setPage(1);
   };
 
-  const handleRefresh = async () => {
-    await refetch();
-  };
-
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= (data?.totalPages || 1)) {
       setPage(newPage);
     }
   };
 
-  const isLoadingData = isLoading || isFetching;
+  const hasActiveFilters = Boolean(search || status || priority || customerId);
+
+  if (isLoading) {
+    return <ShipmentSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <ShipmentErrorState
+        message={error instanceof Error ? error.message : 'Could not retrieve shipment records.'}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        title="Shipments"
-        description="Manage deliveries, cargo movements and shipment lifecycle."
-        actions={
-          <Button onClick={handleCreateClick} className="flex items-center gap-2">
-            <Plus className="h-4.5 w-4.5" />
-            Create Shipment
-          </Button>
-        }
+      {/* Header */}
+      <ShipmentHeader
+        totalShipments={data?.total || 0}
+        onAddShipment={handleCreateClick}
+        onRefresh={() => void refetch()}
+        isRefreshing={isFetching}
       />
 
-      {/* Notifications */}
+      {/* KPI Cards */}
+      <ShipmentKPICards
+        data={kpiData}
+        activeStatusFilter={status}
+        onStatusFilterChange={(val) => {
+          setStatus(val);
+          setPage(1);
+        }}
+      />
+
+      {/* Alerts */}
       {successMessage && (
-        <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-600 dark:text-emerald-400 animate-scale-up">
-          <CheckCircle2 className="h-5 w-5 shrink-0" />
-          <span className="font-semibold">{successMessage}</span>
+        <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 className="h-4.5 w-4.5 shrink-0" />
+          <span>{successMessage}</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="flex items-center gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-600 dark:text-rose-400 animate-scale-up">
-          <AlertCircle className="h-5 w-5 shrink-0" />
-          <span className="font-semibold">{errorMessage}</span>
+        <div className="flex items-center gap-2.5 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-xs font-bold text-destructive">
+          <AlertCircle className="h-4.5 w-4.5 shrink-0" />
+          <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Toolbar Filters */}
+      {/* Toolbar */}
       <ShipmentToolbar
         search={search}
         onSearchChange={(val) => {
@@ -254,80 +283,92 @@ export const ShipmentsPage: React.FC = () => {
           setPage(1);
         }}
         customers={customersList}
-        onRefresh={handleRefresh}
+        sortBy={sortBy}
+        onSortByChange={(val) => {
+          setSortBy(val);
+          setPage(1);
+        }}
+        sortOrder={sortOrder}
+        onSortOrderChange={(val) => setSortOrder(val)}
+        viewMode={viewMode}
+        onViewModeChange={(mode) => setViewMode(mode)}
         onClearFilters={handleClearFilters}
-        isRefreshing={isFetching}
       />
 
-      {/* Main Table Content */}
-      {isLoading && !data ? (
-        <ShipmentSkeleton />
-      ) : error ? (
-        <ErrorState
-          title="Error loading shipments"
-          description={error instanceof Error ? error.message : 'An unexpected error occurred while fetching shipments data.'}
-          onRetry={handleRefresh}
-        />
-      ) : !data || data.items.length === 0 ? (
-        <EmptyState
-          title="No shipments found"
-          description={
-            hasActiveFilters()
-              ? 'Try resetting the filters or modifying your search query to locate shipments.'
-              : 'Add your first shipment to start planning and executing cargo movements.'
-          }
-          action={
-            !hasActiveFilters() ? (
-              <Button onClick={handleCreateClick} className="mt-2.5">
-                Create Shipment
-              </Button>
-            ) : (
-              <Button variant="outline" onClick={handleClearFilters} className="mt-2.5">
-                Clear Filters
-              </Button>
-            )
-          }
+      {/* Main Content Area */}
+      {!data || data.items.length === 0 ? (
+        <ShipmentEmptyState
+          hasFilters={hasActiveFilters}
+          onClearFilters={handleClearFilters}
+          onCreateShipment={handleCreateClick}
         />
       ) : (
         <div className="space-y-4">
-          <ShipmentTable
-            shipments={data.items}
-            onView={handleViewClick}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          />
+          {viewMode === 'table' ? (
+            <ShipmentTable
+              shipments={data.items}
+              onView={handleViewClick}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+            />
+          ) : (
+            <ShipmentCards
+              shipments={data.items}
+              onView={handleViewClick}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+            />
+          )}
 
           {/* Pagination Controls */}
           {data.totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm">
+            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl shadow-xs">
               <span className="text-xs font-semibold text-muted-foreground">
                 Showing Page <strong className="text-foreground">{data.page}</strong> of{' '}
                 <strong className="text-foreground">{data.totalPages}</strong> (
                 <strong className="text-foreground">{data.total}</strong> total shipments)
               </span>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1 || isLoadingData}
-                  className="flex items-center gap-1"
+                  disabled={page === 1 || isFetching}
+                  className="h-8.5 px-3 text-xs"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4 mr-1" />
                   Previous
                 </Button>
+                <div className="flex items-center gap-1">
+                  {[...Array(data.totalPages)].map((_, idx) => {
+                    const pageNum = idx + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`h-8 w-8 rounded-lg text-xs font-semibold transition-colors ${
+                          page === pageNum
+                            ? 'bg-primary text-white font-bold'
+                            : 'bg-transparent text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handlePageChange(page + 1)}
-                  disabled={page === data.totalPages || isLoadingData}
-                  className="flex items-center gap-1"
+                  disabled={page === data.totalPages || isFetching}
+                  className="h-8.5 px-3 text-xs"
                 >
                   Next
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
             </div>
@@ -346,7 +387,7 @@ export const ShipmentsPage: React.FC = () => {
       />
 
       {/* Details Side Drawer */}
-      <ShipmentDetailsDrawer
+      <ShipmentDrawer
         shipment={selectedShipment}
         open={drawerOpen}
         onClose={() => {
@@ -359,9 +400,9 @@ export const ShipmentsPage: React.FC = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Shipment Deletion"
-        description={`Are you absolutely sure you want to delete shipment ${
+        description={`Are you sure you want to delete shipment ${
           selectedShipment?.shipmentNumber || ''
-        }? This operational transaction record will be permanently deleted. This action is irreversible.`}
+        }? This action cannot be undone.`}
         confirmLabel="Delete Shipment"
         cancelLabel="Keep Record"
         onConfirm={handleConfirmDelete}
@@ -374,9 +415,6 @@ export const ShipmentsPage: React.FC = () => {
       />
     </div>
   );
-
-  function hasActiveFilters() {
-    return !!(search || status || priority || customerId);
-  }
 };
+
 export default ShipmentsPage;
