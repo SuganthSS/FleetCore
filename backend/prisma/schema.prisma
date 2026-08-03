@@ -254,6 +254,8 @@ model User {
   createdAt     DateTime   @default(now())
   /// Last modification timestamp
   updatedAt     DateTime   @updatedAt
+  /// Soft deletion timestamp
+  deletedAt     DateTime?
 
   /// Parent Company relation
   company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
