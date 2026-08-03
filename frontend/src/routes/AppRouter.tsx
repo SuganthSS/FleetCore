@@ -6,6 +6,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { VehiclesPage } from '@/pages/VehiclesPage';
+import { VehicleDetailsPage } from '@/pages/VehicleDetailsPage';
 import { DriversPage } from '@/pages/DriversPage';
 import { CustomersPage } from '@/pages/CustomersPage';
 import { ShipmentsPage } from '@/pages/ShipmentsPage';
@@ -72,6 +73,10 @@ const router = createBrowserRouter([
           {
             path: '/vehicles',
             element: <VehiclesPage />,
+          },
+          {
+            path: '/vehicles/:id',
+            element: <VehicleDetailsPage />,
           },
           {
             path: '/drivers',

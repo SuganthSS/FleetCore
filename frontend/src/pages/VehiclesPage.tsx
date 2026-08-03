@@ -1,55 +1,57 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { vehicleService } from '@/services/vehicle.service';
-import type { Vehicle, VehicleStatus, VehicleType, CreateVehiclePayload } from '@/types/vehicle';
+import type { Vehicle, VehicleStatus, VehicleType, FuelType, CreateVehiclePayload } from '@/types/vehicle';
+import { ConfirmDialog } from '@/components/ui';
 import {
-  PageHeader,
-  Button,
-  ErrorState,
-  EmptyState,
-  ConfirmDialog,
-} from '@/components/ui';
-import {
+  FleetHeader,
+  FleetKPICards,
+  FleetToolbar,
+  FleetPagination,
   VehicleTable,
-  VehicleToolbar,
+  VehicleDrawer,
   VehicleModal,
-  VehicleDetailsDrawer,
   VehicleSkeleton,
+  VehicleEmptyState,
+  VehicleErrorState,
 } from '@/components/vehicle';
 
 export const VehiclesPage: React.FC = () => {
   const queryClient = useQueryClient();
 
-  // Search & Filter state
+  // Filter / Search state
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [vehicleType, setVehicleType] = useState('');
+  const [fuelType, setFuelType] = useState('');
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Modal / Drawer state
+  // UI state
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-
-  // Success / Error Alerts
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fetch Vehicles
+  // KPI filter — for quick card-click filtering
+  const [kpiFilter, setKpiFilter] = useState('');
+
+  // ─── Data Fetch ─────────────────────────────────────────────────────────────
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ['vehicles', search, status, vehicleType, page, limit, sortBy, sortOrder],
+    queryKey: ['vehicles', search, status || kpiFilter, vehicleType, fuelType, page, limit, sortBy, sortOrder],
     queryFn: async () => {
       const response = await vehicleService.getVehicles({
         page,
         limit,
         search: search || undefined,
-        status: status ? (status as VehicleStatus) : undefined,
+        status: (status || kpiFilter) ? ((status || kpiFilter) as VehicleStatus) : undefined,
         vehicleType: vehicleType ? (vehicleType as VehicleType) : undefined,
+        fuelType: fuelType ? (fuelType as FuelType) : undefined,
         sortBy,
         sortOrder,
       });
@@ -57,64 +59,75 @@ export const VehiclesPage: React.FC = () => {
     },
   });
 
-  // Create Vehicle Mutation
+  // KPI summary (total fleet counts) — separate query without filters
+  const { data: allData } = useQuery({
+    queryKey: ['vehicles-kpi'],
+    queryFn: async () => {
+      const r = await vehicleService.getVehicles({ page: 1, limit: 1000 });
+      return r.data;
+    },
+    staleTime: 60000,
+  });
+
+  const kpiData = (() => {
+    const items = allData?.items ?? [];
+    return {
+      total: allData?.total ?? 0,
+      available: items.filter((v) => v.status === 'AVAILABLE').length,
+      onTrip: items.filter((v) => v.status === 'ON_TRIP').length,
+      maintenance: items.filter((v) => v.status === 'MAINTENANCE').length,
+      inactive: items.filter((v) => v.status === 'OUT_OF_SERVICE' || v.status === 'DECOMMISSIONED').length,
+    };
+  })();
+
+  // ─── Mutations ───────────────────────────────────────────────────────────────
+  const invalidateVehicles = () => {
+    void queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+    void queryClient.invalidateQueries({ queryKey: ['vehicles-kpi'] });
+  };
+
+  const showAlert = (msg: string, type: 'success' | 'error') => {
+    if (type === 'success') { setSuccessMessage(msg); setErrorMessage(null); }
+    else { setErrorMessage(msg); setSuccessMessage(null); }
+    setTimeout(() => { setSuccessMessage(null); setErrorMessage(null); }, 4500);
+  };
+
   const createMutation = useMutation({
     mutationFn: vehicleService.createVehicle,
     onSuccess: (res) => {
-      setSuccessMessage(`Vehicle '${res.data.registrationNumber}' created successfully.`);
-      setErrorMessage(null);
-      void queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      showAlert(`Vehicle '${res.data.registrationNumber}' added to fleet.`, 'success');
+      invalidateVehicles();
       setModalOpen(false);
-      clearAlertLater();
     },
-    onError: (err: any) => {
-      setErrorMessage(err.message || 'Failed to create vehicle.');
-      setSuccessMessage(null);
-    },
+    onError: (err: Error) => showAlert(err.message || 'Failed to create vehicle.', 'error'),
   });
 
-  // Update Vehicle Mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, payload }: { id: string; payload: Partial<CreateVehiclePayload> }) => {
-      return vehicleService.updateVehicle(id, payload);
-    },
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<CreateVehiclePayload> }) =>
+      vehicleService.updateVehicle(id, payload),
     onSuccess: (res) => {
-      setSuccessMessage(`Vehicle '${res.data.registrationNumber}' updated successfully.`);
-      setErrorMessage(null);
-      void queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      showAlert(`Vehicle '${res.data.registrationNumber}' updated successfully.`, 'success');
+      invalidateVehicles();
       setModalOpen(false);
-      clearAlertLater();
     },
-    onError: (err: any) => {
-      setErrorMessage(err.message || 'Failed to update vehicle.');
-      setSuccessMessage(null);
-    },
+    onError: (err: Error) => showAlert(err.message || 'Failed to update vehicle.', 'error'),
   });
 
-  // Delete Vehicle Mutation
   const deleteMutation = useMutation({
     mutationFn: vehicleService.deleteVehicle,
     onSuccess: () => {
-      setSuccessMessage('Vehicle deleted successfully.');
-      setErrorMessage(null);
-      void queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      showAlert('Vehicle removed from fleet.', 'success');
+      invalidateVehicles();
       setDeleteDialogOpen(false);
-      clearAlertLater();
+      setDrawerOpen(false);
     },
-    onError: (err: any) => {
-      setErrorMessage(err.message || 'Failed to delete vehicle.');
-      setSuccessMessage(null);
+    onError: (err: Error) => {
+      showAlert(err.message || 'Failed to delete vehicle.', 'error');
       setDeleteDialogOpen(false);
     },
   });
 
-  const clearAlertLater = () => {
-    setTimeout(() => {
-      setSuccessMessage(null);
-    }, 4000);
-  };
-
-  // Handlers
+  // ─── Handlers ────────────────────────────────────────────────────────────────
   const handleSort = (field: string) => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -125,25 +138,24 @@ export const VehiclesPage: React.FC = () => {
     setPage(1);
   };
 
-  const handleOpenAddModal = () => {
+  const handleOpenAdd = () => {
     setSelectedVehicle(null);
-    setErrorMessage(null);
     setModalOpen(true);
   };
 
-  const handleOpenEditModal = (vehicle: Vehicle) => {
+  const handleOpenEdit = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
-    setErrorMessage(null);
+    setDrawerOpen(false);
     setModalOpen(true);
   };
 
-  const handleOpenDetailsDrawer = (vehicle: Vehicle) => {
+  const handleOpenDrawer = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
     setDrawerOpen(true);
   };
 
-  const handleOpenDeleteDialog = (id: string) => {
-    const vehicle = data?.items.find((v) => v.id === id);
+  const handleOpenDelete = (id: string) => {
+    const vehicle = data?.items.find((v) => v.id === id) ?? selectedVehicle;
     if (vehicle) {
       setSelectedVehicle(vehicle);
       setDeleteDialogOpen(true);
@@ -158,42 +170,22 @@ export const VehiclesPage: React.FC = () => {
     }
   };
 
-  const handleConfirmDelete = () => {
-    if (selectedVehicle) {
-      deleteMutation.mutate(selectedVehicle.id);
-    }
+  const handleKpiFilter = (f: string) => {
+    setKpiFilter(f);
+    setStatus('');
+    setPage(1);
   };
 
   const handleClearFilters = () => {
     setSearch('');
     setStatus('');
     setVehicleType('');
+    setFuelType('');
+    setKpiFilter('');
     setPage(1);
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Vehicles"
-          description="Manage your organization's fleet."
-        />
-        <VehicleSkeleton />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="py-10">
-        <ErrorState
-          title="Failed to Load Vehicles"
-          description={error instanceof Error ? error.message : 'Could not retrieve fleet information from backend.'}
-          onRetry={() => void refetch()}
-        />
-      </div>
-    );
-  }
+  const hasFilters = !!(search || status || vehicleType || fuelType || kpiFilter);
 
   const pagination = data
     ? {
@@ -206,145 +198,94 @@ export const VehiclesPage: React.FC = () => {
       }
     : null;
 
+  // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        title="Vehicles"
-        description="Manage your organization's fleet."
-        actions={
-          <Button onClick={handleOpenAddModal} className="gap-2 shadow-sm">
-            <Plus className="h-4 w-4" />
-            Add Vehicle
-          </Button>
-        }
+    <div className="space-y-5">
+      {/* Header */}
+      <FleetHeader
+        totalVehicles={kpiData.total}
+        onAddVehicle={handleOpenAdd}
+        onRefresh={() => void refetch()}
+        isRefreshing={isFetching}
       />
 
-      {/* Alerts */}
+      {/* Fleet KPI Cards */}
+      <FleetKPICards
+        data={kpiData}
+        activeFilter={kpiFilter}
+        onFilterChange={handleKpiFilter}
+      />
+
+      {/* Alert Banner */}
       {successMessage && (
-        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-600 dark:text-emerald-400 animate-slide-up">
-          <CheckCircle2 className="h-4.5 w-4.5 shrink-0" />
-          <span>{successMessage}</span>
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400 animate-slide-up">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <span className="font-medium">{successMessage}</span>
         </div>
       )}
-
       {errorMessage && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive animate-slide-up">
-          <AlertCircle className="h-4.5 w-4.5 shrink-0" />
-          <span>{errorMessage}</span>
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive animate-slide-up">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span className="font-medium">{errorMessage}</span>
         </div>
       )}
 
       {/* Toolbar */}
-      <VehicleToolbar
+      <FleetToolbar
         search={search}
-        onSearchChange={(val) => {
-          setSearch(val);
-          setPage(1);
-        }}
+        onSearchChange={(val) => { setSearch(val); setPage(1); }}
         status={status}
-        onStatusChange={(val) => {
-          setStatus(val);
-          setPage(1);
-        }}
+        onStatusChange={(val) => { setStatus(val); setKpiFilter(''); setPage(1); }}
         vehicleType={vehicleType}
-        onVehicleTypeChange={(val) => {
-          setVehicleType(val);
-          setPage(1);
-        }}
-        onRefresh={() => void refetch()}
+        onVehicleTypeChange={(val) => { setVehicleType(val); setPage(1); }}
+        fuelType={fuelType}
+        onFuelTypeChange={(val) => { setFuelType(val); setPage(1); }}
+        sortBy={sortBy}
+        onSortByChange={(val) => { setSortBy(val); setPage(1); }}
+        sortOrder={sortOrder}
+        onSortOrderChange={(val) => { setSortOrder(val); setPage(1); }}
         onClearFilters={handleClearFilters}
-        isRefreshing={isFetching}
       />
 
-      {/* Data Table */}
-      {data && data.items.length > 0 ? (
-        <div className="space-y-4">
+      {/* Body */}
+      {isLoading ? (
+        <VehicleSkeleton />
+      ) : error ? (
+        <VehicleErrorState
+          message={error instanceof Error ? error.message : undefined}
+          onRetry={() => void refetch()}
+        />
+      ) : !data || data.items.length === 0 ? (
+        <VehicleEmptyState
+          hasFilters={hasFilters}
+          onAddVehicle={handleOpenAdd}
+          onClearFilters={handleClearFilters}
+        />
+      ) : (
+        <div className="space-y-3">
           <VehicleTable
             vehicles={data.items}
-            onView={handleOpenDetailsDrawer}
-            onEdit={handleOpenEditModal}
-            onDelete={handleOpenDeleteDialog}
+            onView={handleOpenDrawer}
+            onEdit={handleOpenEdit}
+            onDelete={handleOpenDelete}
             sortBy={sortBy}
             sortOrder={sortOrder}
             onSort={handleSort}
           />
-
-          {/* Pagination Footer */}
-          {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm">
-              <span className="text-xs text-muted-foreground font-medium">
-                Showing {pagination.start} to {pagination.end} of {pagination.total} vehicles
-              </span>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                  disabled={page === 1}
-                  className="h-8.5 px-3"
-                  aria-label="Previous Page"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </Button>
-                <div className="flex items-center gap-1">
-                  {[...Array(pagination.totalPages)].map((_, idx) => {
-                    const pageNum = idx + 1;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setPage(pageNum)}
-                        className={`h-8.5 w-8.5 rounded-lg text-xs font-semibold transition-colors ${
-                          page === pageNum
-                            ? 'bg-primary text-white'
-                            : 'bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
-                        aria-label={`Page ${pageNum}`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(p + 1, pagination.totalPages))}
-                  disabled={page === pagination.totalPages}
-                  className="h-8.5 px-3"
-                  aria-label="Next Page"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
+          {pagination && (
+            <FleetPagination
+              page={pagination.page}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              start={pagination.start}
+              end={pagination.end}
+              onPageChange={setPage}
+            />
           )}
         </div>
-      ) : (
-        <EmptyState
-          title="No vehicles found"
-          description={
-            search || status || vehicleType
-              ? 'Try adjusting your search criteria or resetting filters.'
-              : 'Add vehicles to start managing your logistics fleet.'
-          }
-          action={
-            (search || status || vehicleType) ? (
-              <Button variant="outline" size="sm" onClick={handleClearFilters}>
-                Clear All Filters
-              </Button>
-            ) : (
-              <Button size="sm" onClick={handleOpenAddModal}>
-                + Add First Vehicle
-              </Button>
-            )
-          }
-        />
       )}
 
-      {/* Add / Edit Modal */}
+      {/* Vehicle Form Modal */}
       <VehicleModal
         open={modalOpen}
         vehicle={selectedVehicle}
@@ -353,30 +294,33 @@ export const VehiclesPage: React.FC = () => {
         loading={createMutation.isPending || updateMutation.isPending}
       />
 
-      {/* Details Slide-out Drawer */}
-      <VehicleDetailsDrawer
+      {/* Vehicle Detail Drawer */}
+      <VehicleDrawer
         open={drawerOpen}
         vehicle={selectedVehicle}
         onClose={() => setDrawerOpen(false)}
+        onEdit={handleOpenEdit}
+        onDelete={handleOpenDelete}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Confirm Delete */}
       <ConfirmDialog
         open={deleteDialogOpen}
         destructive
-        title="Delete Vehicle?"
+        title="Remove Vehicle from Fleet?"
         description={
           selectedVehicle
-            ? `Are you sure you want to delete vehicle '${selectedVehicle.registrationNumber}' (${selectedVehicle.make} ${selectedVehicle.model})? This action cannot be undone.`
+            ? `Are you sure you want to permanently delete '${selectedVehicle.registrationNumber}' (${selectedVehicle.make} ${selectedVehicle.model}) from your fleet? This action cannot be undone.`
             : 'Are you sure you want to delete this vehicle?'
         }
         confirmLabel="Delete Asset"
         cancelLabel="Keep Asset"
         loading={deleteMutation.isPending}
-        onConfirm={handleConfirmDelete}
+        onConfirm={() => selectedVehicle && deleteMutation.mutate(selectedVehicle.id)}
         onCancel={() => setDeleteDialogOpen(false)}
       />
     </div>
   );
 };
+
 export default VehiclesPage;
