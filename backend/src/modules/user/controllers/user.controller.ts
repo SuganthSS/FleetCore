@@ -349,6 +349,26 @@ export class UserController {
       });
     }
   }
+
+  /**
+   * Handles listing system roles.
+   */
+  async getRoles(_req: Request, res: Response): Promise<void> {
+    try {
+      const roles = await userService.getRoles();
+      res.status(200).json({
+        success: true,
+        data: roles,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to retrieve roles';
+      res.status(500).json({
+        success: false,
+        message,
+      });
+    }
+  }
 }
 
 export const userController = new UserController();
+

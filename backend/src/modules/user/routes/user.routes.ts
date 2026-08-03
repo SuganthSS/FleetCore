@@ -18,10 +18,17 @@ router.use(authorize('Administrator'));
 router.get('/', (req, res) => userController.getUsers(req, res));
 
 /**
+ * GET /api/v1/users/meta/roles
+ * Retrieve system RBAC roles.
+ */
+router.get('/meta/roles', (req, res) => userController.getRoles(req, res));
+
+/**
  * GET /api/v1/users/:id
  * Retrieve a single user profile.
  */
 router.get('/:id', (req, res) => userController.getUser(req, res));
+
 
 /**
  * POST /api/v1/users

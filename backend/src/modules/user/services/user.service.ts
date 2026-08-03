@@ -330,6 +330,21 @@ export class UserService {
       select: defaultUserSelect,
     });
   }
+
+  /**
+   * Retrieves available system roles.
+   */
+  async getRoles(): Promise<any[]> {
+    return await prisma.role.findMany({
+      select: {
+        id: true,
+        name: true,
+        description: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
 }
 
 export const userService = new UserService();
+

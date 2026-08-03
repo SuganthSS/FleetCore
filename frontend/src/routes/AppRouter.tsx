@@ -18,7 +18,9 @@ import { NotificationsPage } from '@/pages/NotificationsPage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { UsersPage } from '@/pages/UsersPage';
 import { LoginPage } from '@/pages/LoginPage';
+
 
 
 
@@ -112,11 +114,16 @@ const router = createBrowserRouter([
             element: <ReportsPage />,
           },
           {
+            path: '/users',
+            element: <UsersPage />,
+          },
+          {
             path: '/settings',
             element: <SettingsPage />,
           },
         ],
       },
+
 
 
 
