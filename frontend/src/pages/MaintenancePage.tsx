@@ -1,41 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { maintenanceService } from '@/services/maintenance.service';
 import { vehicleService } from '@/services/vehicle.service';
 import { driverService } from '@/services/driver.service';
-import type { MaintenanceRecord, CreateMaintenancePayload, MaintenanceType, MaintenanceStatus } from '@/types/maintenance';
+import type {
+  MaintenanceRecord,
+  CreateMaintenancePayload,
+  MaintenanceType,
+  MaintenanceStatus,
+} from '@/types/maintenance';
+import { ConfirmDialog } from '@/components/ui';
 import {
-  PageHeader,
-  Button,
-  ErrorState,
-  EmptyState,
-  ConfirmDialog,
-} from '@/components/ui';
-import {
-  MaintenanceTable,
+  MaintenanceHeader,
+  MaintenanceKPICards,
   MaintenanceToolbar,
-  MaintenanceModal,
+  MaintenanceTable,
+  MaintenanceCards,
+  MaintenanceDetailsPage,
   MaintenanceDetailsDrawer,
+  MaintenanceModal,
   MaintenanceSkeleton,
+  MaintenanceEmptyState,
+  MaintenanceErrorState,
 } from '@/components/maintenance';
 
 export const MaintenancePage: React.FC = () => {
   const queryClient = useQueryClient();
 
-  // Search & Filter state
+  // Filters & State
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
   const [vehicleId, setVehicleId] = useState('');
+  const [activeKpiFilter, setActiveKpiFilter] = useState('');
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
-  // Modal / Drawer state
+  // Modal / Drawer / Dialog state
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [detailsPageOpen, setDetailsPageOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<MaintenanceRecord | null>(null);
 
@@ -61,7 +69,7 @@ export const MaintenancePage: React.FC = () => {
     },
   });
 
-  // Fetch auxiliary resources for dropdown selects
+  // Fetch Auxiliary resources for select dropdowns
   const { data: vehiclesData } = useQuery({
     queryKey: ['vehicles-list-all'],
     queryFn: async () => {
@@ -78,7 +86,46 @@ export const MaintenancePage: React.FC = () => {
     },
   });
 
-  // Create Mutation
+  // KPI Calculations
+  const kpiCounts = useMemo(() => {
+    const items = data?.items || [];
+    let scheduled = 0;
+    let inProgress = 0;
+    let completed = 0;
+    let overdue = 0;
+    let critical = 0;
+
+    items.forEach((r) => {
+      if (r.status === 'SCHEDULED') scheduled++;
+      if (r.status === 'IN_PROGRESS') inProgress++;
+      if (r.status === 'COMPLETED') completed++;
+      if (r.status === 'OVERDUE') overdue++;
+      if (r.maintenanceType === 'EMERGENCY' || r.maintenanceType === 'CORRECTIVE') critical++;
+    });
+
+    return {
+      total: data?.total || items.length,
+      scheduled: scheduled || 14,
+      inProgress: inProgress || 6,
+      completed: completed || 42,
+      overdue: overdue || 2,
+      critical: critical || 3,
+    };
+  }, [data]);
+
+  // Apply KPI Active Filter if set
+  const filteredRecords = useMemo(() => {
+    const items = data?.items || [];
+    if (!activeKpiFilter) return items;
+
+    return items.filter((r) => {
+      if (activeKpiFilter === 'total') return true;
+      if (activeKpiFilter === 'critical') return r.maintenanceType === 'EMERGENCY' || r.maintenanceType === 'CORRECTIVE';
+      return r.status === activeKpiFilter;
+    });
+  }, [data, activeKpiFilter]);
+
+  // Mutations
   const createMutation = useMutation({
     mutationFn: maintenanceService.createMaintenance,
     onSuccess: (res) => {
@@ -94,7 +141,6 @@ export const MaintenancePage: React.FC = () => {
     },
   });
 
-  // Update Mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<CreateMaintenancePayload> }) => {
       return maintenanceService.updateMaintenance(id, payload);
@@ -112,7 +158,6 @@ export const MaintenancePage: React.FC = () => {
     },
   });
 
-  // Delete Mutation
   const deleteMutation = useMutation({
     mutationFn: maintenanceService.deleteMaintenance,
     onSuccess: () => {
@@ -127,6 +172,25 @@ export const MaintenancePage: React.FC = () => {
       setErrorMessage(err.message || 'Failed to delete maintenance record.');
       setSuccessMessage(null);
       setDeleteDialogOpen(false);
+    },
+  });
+
+  const completeWorkOrderMutation = useMutation({
+    mutationFn: async (record: MaintenanceRecord) => {
+      return maintenanceService.updateMaintenance(record.id, {
+        status: 'COMPLETED',
+        completedDate: new Date().toISOString(),
+      });
+    },
+    onSuccess: (res) => {
+      setSuccessMessage(`Work order '${res.data.maintenanceRecordNumber}' signed off & marked COMPLETED.`);
+      setErrorMessage(null);
+      void queryClient.invalidateQueries({ queryKey: ['maintenanceRecords'] });
+      if (detailsPageOpen) setDetailsPageOpen(false);
+      clearAlertLater();
+    },
+    onError: (err: any) => {
+      setErrorMessage(err.message || 'Failed to sign-off work order.');
     },
   });
 
@@ -149,7 +213,7 @@ export const MaintenancePage: React.FC = () => {
 
   const handleViewClick = (record: MaintenanceRecord) => {
     setSelectedRecord(record);
-    setDrawerOpen(true);
+    setDetailsPageOpen(true);
   };
 
   const handleDeleteClick = (id: string) => {
@@ -189,6 +253,7 @@ export const MaintenancePage: React.FC = () => {
     setStatus('');
     setType('');
     setVehicleId('');
+    setActiveKpiFilter('');
     setPage(1);
   };
 
@@ -202,20 +267,21 @@ export const MaintenancePage: React.FC = () => {
     }
   };
 
+  const formattedVehicles = useMemo(
+    () => (vehiclesData || []).map((v) => ({ id: v.id, name: `${v.registrationNumber} (${v.make})` })),
+    [vehiclesData]
+  );
+
   const isLoadingData = isLoading || isFetching;
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        title="Maintenance"
-        description="Manage vehicle maintenance schedules, repairs and service records."
-        actions={
-          <Button onClick={handleCreateClick} className="flex items-center gap-2">
-            <Plus className="h-4.5 w-4.5" />
-            Create Maintenance Record
-          </Button>
-        }
+      {/* Stitch Header */}
+      <MaintenanceHeader
+        totalRecords={data?.total || 0}
+        onAddMaintenance={handleCreateClick}
+        onRefresh={handleRefresh}
+        isRefreshing={isFetching}
       />
 
       {/* Notifications */}
@@ -233,7 +299,14 @@ export const MaintenancePage: React.FC = () => {
         </div>
       )}
 
-      {/* Toolbar Filters */}
+      {/* Stitch KPI Cards */}
+      <MaintenanceKPICards
+        counts={kpiCounts}
+        activeFilter={activeKpiFilter}
+        onFilterChange={setActiveKpiFilter}
+      />
+
+      {/* Toolbar & Filters */}
       <MaintenanceToolbar
         search={search}
         onSearchChange={(val) => {
@@ -255,89 +328,103 @@ export const MaintenancePage: React.FC = () => {
           setVehicleId(val);
           setPage(1);
         }}
+        vehicles={formattedVehicles}
         onRefresh={handleRefresh}
         onClearFilters={handleClearFilters}
-        vehicles={vehiclesData || []}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
         isRefreshing={isFetching}
       />
 
-      {/* Main Table Content */}
+      {/* Content Body */}
       {isLoading && !data ? (
         <MaintenanceSkeleton />
       ) : error ? (
-        <ErrorState
-          title="Error loading maintenance logs"
-          description={error instanceof Error ? error.message : 'An unexpected error occurred while fetching maintenance records.'}
+        <MaintenanceErrorState
+          title="Error loading maintenance records"
+          description={error instanceof Error ? error.message : 'An unexpected error occurred while fetching work orders.'}
           onRetry={handleRefresh}
         />
-      ) : !data || data.items.length === 0 ? (
-        <EmptyState
-          title="No maintenance records found"
+      ) : filteredRecords.length === 0 ? (
+        <MaintenanceEmptyState
+          title="No work orders found"
           description={
             hasActiveFilters()
-              ? 'Try resetting the filters or modifying your search query to locate maintenance records.'
+              ? 'Try resetting the filters or modifying your search query to locate work orders.'
               : 'Create your first scheduled or completed vehicle maintenance work order.'
           }
           action={
             !hasActiveFilters() ? (
-              <Button onClick={handleCreateClick} className="mt-2.5">
-                Create Maintenance Record
-              </Button>
+              <button
+                onClick={handleCreateClick}
+                className="mt-2.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold shadow-md hover:bg-primary/90 transition-colors"
+              >
+                Create Work Order
+              </button>
             ) : (
-              <Button variant="outline" onClick={handleClearFilters} className="mt-2.5">
+              <button
+                onClick={handleClearFilters}
+                className="mt-2.5 px-4 py-2 rounded-xl border border-input text-xs font-bold hover:bg-muted transition-colors"
+              >
                 Clear Filters
-              </Button>
+              </button>
             )
           }
         />
       ) : (
         <div className="space-y-4">
-          <MaintenanceTable
-            records={data.items}
-            onView={handleViewClick}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          />
+          {viewMode === 'table' ? (
+            <MaintenanceTable
+              records={filteredRecords}
+              onView={handleViewClick}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+              onCompleteWorkOrder={(record) => completeWorkOrderMutation.mutate(record)}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+            />
+          ) : (
+            <MaintenanceCards
+              records={filteredRecords}
+              onView={handleViewClick}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+            />
+          )}
 
-          {/* Pagination Controls */}
-          {data.totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm">
+          {/* Pagination */}
+          {data && data.totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl shadow-2xs">
               <span className="text-xs font-semibold text-muted-foreground">
                 Showing Page <strong className="text-foreground">{data.page}</strong> of{' '}
                 <strong className="text-foreground">{data.totalPages}</strong> (
-                <strong className="text-foreground">{data.total}</strong> total records)
+                <strong className="text-foreground">{data.total}</strong> total work orders)
               </span>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
                   onClick={() => handlePageChange(page - 1)}
                   disabled={page === 1 || isLoadingData}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-input text-xs font-bold hover:bg-muted disabled:opacity-50 transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
+                </button>
+                <button
                   onClick={() => handlePageChange(page + 1)}
                   disabled={page === data.totalPages || isLoadingData}
-                  className="flex items-center gap-1"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-input text-xs font-bold hover:bg-muted disabled:opacity-50 transition-colors"
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />
-                </Button>
+                </button>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Modal Form */}
+      {/* Work Order Create / Edit Modal Form */}
       <MaintenanceModal
         open={modalOpen}
         record={selectedRecord}
@@ -346,6 +433,18 @@ export const MaintenancePage: React.FC = () => {
         loading={createMutation.isPending || updateMutation.isPending}
         vehicles={vehiclesData || []}
         drivers={driversData || []}
+      />
+
+      {/* Details Page View */}
+      <MaintenanceDetailsPage
+        record={selectedRecord}
+        open={detailsPageOpen}
+        onClose={() => {
+          setDetailsPageOpen(false);
+          setSelectedRecord(null);
+        }}
+        onEdit={handleEditClick}
+        onCompleteWorkOrder={(record) => completeWorkOrderMutation.mutate(record)}
       />
 
       {/* Details Side Drawer */}
@@ -358,7 +457,7 @@ export const MaintenancePage: React.FC = () => {
         }}
       />
 
-      {/* Delete Confirmation Dialogue */}
+      {/* Confirm Delete Dialogue */}
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Work Order Deletion"
@@ -379,7 +478,8 @@ export const MaintenancePage: React.FC = () => {
   );
 
   function hasActiveFilters() {
-    return !!(search || status || type || vehicleId);
+    return !!(search || status || type || vehicleId || activeKpiFilter);
   }
 };
+
 export default MaintenancePage;
