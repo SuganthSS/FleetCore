@@ -19,7 +19,9 @@ import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { UsersPage } from '@/pages/UsersPage';
+import { RolesPermissionsPage } from '@/pages/RolesPermissionsPage';
 import { LoginPage } from '@/pages/LoginPage';
+
 
 
 
@@ -116,6 +118,10 @@ const router = createBrowserRouter([
           {
             path: '/users',
             element: <UsersPage />,
+          },
+          {
+            path: '/roles',
+            element: <RolesPermissionsPage />,
           },
           {
             path: '/settings',

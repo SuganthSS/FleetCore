@@ -25,3 +25,25 @@ Implement the FleetCore Enterprise Administrator Dashboard using the Stitch MCP 
 - Executed `npm run build` on backend: **Exit Code 0** (Success).
 - Executed `npm run lint` on backend: **0 errors** (6 TypeScript `any` warnings).
 - Created documentation at `docs/frontend/admin-dashboard.md`.
+
+## [2026-08-03] SPEC-104: Enterprise User Management Implementation
+- Replaced prototype User Management page with enterprise `User Management - FleetCore` screen from Stitch MCP.
+- Built reusable user components: `UserToolbar`, `UserTable`, `UserDrawer`, `UserModal`, `ResetPasswordModal`, `BulkActions`, `UserSkeleton`, `UserEmptyState`, `UserErrorState`.
+- Added backend route `GET /api/v1/users/meta/roles` to retrieve system RBAC roles.
+- Created documentation at `docs/frontend/user-management.md`.
+
+## [2026-08-03] SPEC-105: Enterprise Roles & Permissions Implementation
+- Replaced prototype roles view with enterprise `Roles & Permissions - FleetCore` screen from Stitch MCP.
+- Created dedicated backend role module (`backend/src/modules/role/`) exposing `/api/v1/roles`, `/api/v1/roles/permissions`, `/api/v1/roles/:id`, and `/api/v1/roles/:id/permissions`.
+- Built modular frontend role components in `frontend/src/components/role/`:
+  - `RoleHeader`: Page header with role overview KPI summary cards.
+  - `RoleToolbar`: Search bar, role type filter, and view mode switcher (Cards, Matrix, Table).
+  - `RoleCard`: High-density role cards with capability badges and user counts.
+  - `RoleTable`: Tabular view of role records and assignment details.
+  - `PermissionMatrix`: Interactive 17-module cross-capability matrix grid.
+  - `PermissionGroup`: Checkbox category groups for role permission drawer.
+  - `PermissionBadge`: Color-coded action capability pills.
+  - `RoleDrawer`: Slide-over detailed role drawer with permission editing.
+  - `RoleSkeleton`, `RoleEmptyState`, `RoleErrorState`.
+- Created documentation at `docs/frontend/roles-permissions.md`.
+

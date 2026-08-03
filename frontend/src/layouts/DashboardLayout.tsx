@@ -15,6 +15,7 @@ import {
   TrendingUp,
   FileText,
   Settings,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -27,6 +28,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   { name: 'Users', path: '/users', icon: Users },
+  { name: 'Roles & Permissions', path: '/roles', icon: ShieldCheck },
   { name: 'Vehicles', path: '/vehicles', icon: Truck },
   { name: 'Drivers', path: '/drivers', icon: Users },
   { name: 'Customers', path: '/customers', icon: Building },
@@ -41,6 +43,7 @@ const navItems: NavItem[] = [
   { name: 'Reports', path: '/reports', icon: FileText },
   { name: 'Settings', path: '/settings', icon: Settings },
 ];
+
 
 
 
