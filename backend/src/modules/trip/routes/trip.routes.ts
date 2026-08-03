@@ -13,55 +13,55 @@ router.use(authenticate);
 /**
  * GET /api/v1/trips
  * List trips with pagination, search, filtering, and sorting.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Dispatcher, Driver
  */
 router.get(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Dispatcher', 'Driver'),
   (req, res) => tripController.getTrips(req, res)
 );
 
 /**
  * GET /api/v1/trips/:id
  * Retrieve single trip by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Dispatcher, Driver
  */
 router.get(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Dispatcher', 'Driver'),
   (req, res) => tripController.getTrip(req, res)
 );
 
 /**
  * POST /api/v1/trips
  * Create a new trip execution.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Dispatcher
  */
 router.post(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => tripController.createTrip(req, res)
 );
 
 /**
  * PUT /api/v1/trips/:id
  * Update an existing trip execution by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Dispatcher, Driver
  */
 router.put(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Dispatcher', 'Driver'),
   (req, res) => tripController.updateTrip(req, res)
 );
 
 /**
  * DELETE /api/v1/trips/:id
  * Delete a trip execution by UUID.
- * Roles: Super Admin, Company Admin
+ * Roles: Administrator, Dispatcher
  */
 router.delete(
   '/:id',
-  authorize('Super Admin', 'Company Admin'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => tripController.deleteTrip(req, res)
 );
 

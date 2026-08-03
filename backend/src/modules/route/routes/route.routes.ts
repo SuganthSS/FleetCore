@@ -13,55 +13,55 @@ router.use(authenticate);
 /**
  * GET /api/v1/routes
  * List routes with pagination, search, filtering, and sorting.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Dispatcher
  */
 router.get(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => routeController.getRoutes(req, res)
 );
 
 /**
  * GET /api/v1/routes/:id
  * Retrieve single route by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Dispatcher
  */
 router.get(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => routeController.getRoute(req, res)
 );
 
 /**
  * POST /api/v1/routes
  * Create a new route path.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Dispatcher
  */
 router.post(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => routeController.createRoute(req, res)
 );
 
 /**
  * PUT /api/v1/routes/:id
  * Update an existing route by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Dispatcher
  */
 router.put(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => routeController.updateRoute(req, res)
 );
 
 /**
  * DELETE /api/v1/routes/:id
  * Delete a route by UUID.
- * Roles: Super Admin, Company Admin
+ * Roles: Administrator, Dispatcher
  */
 router.delete(
   '/:id',
-  authorize('Super Admin', 'Company Admin'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => routeController.deleteRoute(req, res)
 );
 

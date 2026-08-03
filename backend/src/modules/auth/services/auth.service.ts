@@ -57,7 +57,9 @@ export class AuthService {
 
     const accessToken = generateAccessToken({
       sub: user.id,
+      userId: user.id,
       email: user.email,
+      role: user.role.name,
       companyId: user.companyId,
       roleId: user.roleId,
       roleName: user.role.name,

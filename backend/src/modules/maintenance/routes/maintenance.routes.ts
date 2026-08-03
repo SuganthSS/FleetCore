@@ -13,55 +13,55 @@ router.use(authenticate);
 /**
  * GET /api/v1/maintenance
  * List maintenance work orders with pagination, search, filtering, and sorting.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager, Maintenance Manager
  */
 router.get(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
   (req, res) => maintenanceController.getMaintenances(req, res)
 );
 
 /**
  * GET /api/v1/maintenance/:id
  * Retrieve single maintenance work order by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager, Maintenance Manager
  */
 router.get(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
   (req, res) => maintenanceController.getMaintenance(req, res)
 );
 
 /**
  * POST /api/v1/maintenance
  * Create a new maintenance work order.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager, Maintenance Manager
  */
 router.post(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
   (req, res) => maintenanceController.createMaintenance(req, res)
 );
 
 /**
  * PUT /api/v1/maintenance/:id
  * Update an existing maintenance work order by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager, Maintenance Manager
  */
 router.put(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
   (req, res) => maintenanceController.updateMaintenance(req, res)
 );
 
 /**
  * DELETE /api/v1/maintenance/:id
  * Delete a maintenance work order by UUID.
- * Roles: Super Admin, Company Admin
+ * Roles: Administrator, Fleet Manager, Maintenance Manager
  */
 router.delete(
   '/:id',
-  authorize('Super Admin', 'Company Admin'),
+  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
   (req, res) => maintenanceController.deleteMaintenance(req, res)
 );
 

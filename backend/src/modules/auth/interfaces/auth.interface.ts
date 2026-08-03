@@ -10,7 +10,9 @@ export interface AuthenticatedUser {
 
 export interface JwtPayload {
   sub: string;
+  userId?: string;
   email: string;
+  role?: string;
   companyId: string;
   roleId: string;
   roleName?: string;

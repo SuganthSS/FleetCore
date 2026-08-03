@@ -13,55 +13,55 @@ router.use(authenticate);
 /**
  * GET /api/v1/tracking
  * List tracking location history entries with pagination, search, filtering, and sorting.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager, Dispatcher, Driver
  */
 router.get(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Driver'),
   (req, res) => trackingController.getTrackingHistory(req, res)
 );
 
 /**
  * GET /api/v1/tracking/:id
  * Retrieve single tracking location history entry by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager, Dispatcher, Driver
  */
 router.get(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Driver'),
   (req, res) => trackingController.getTracking(req, res)
 );
 
 /**
  * POST /api/v1/tracking
  * Create a new tracking location history breadcrumb entry.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager, Dispatcher, Driver
  */
 router.post(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Driver'),
   (req, res) => trackingController.createTracking(req, res)
 );
 
 /**
  * PUT /api/v1/tracking/:id
  * Update an existing tracking location history entry by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager, Dispatcher
  */
 router.put(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher'),
   (req, res) => trackingController.updateTracking(req, res)
 );
 
 /**
  * DELETE /api/v1/tracking/:id
  * Delete a tracking location history entry by UUID.
- * Roles: Super Admin, Company Admin
+ * Roles: Administrator, Fleet Manager
  */
 router.delete(
   '/:id',
-  authorize('Super Admin', 'Company Admin'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => trackingController.deleteTracking(req, res)
 );
 

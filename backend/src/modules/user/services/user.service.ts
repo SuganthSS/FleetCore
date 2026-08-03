@@ -195,13 +195,13 @@ export class UserService {
     id: string,
     input: UpdateUserInput,
     companyId?: string,
-    isActorSuperAdmin = false
+    isActorAdmin = false
   ): Promise<any> {
     const existingUser = await this.getUserById(id, companyId);
 
-    // Prevent modifying Super Admin if actor is not Super Admin
-    if (existingUser.role.name === 'Super Admin' && !isActorSuperAdmin) {
-      throw new Error('Unauthorized to modify a Super Admin user.');
+    // Prevent modifying Administrator if actor is not Administrator
+    if (existingUser.role.name === 'Administrator' && !isActorAdmin) {
+      throw new Error('Unauthorized to modify an Administrator user.');
     }
 
     // Verify unique email if email is changing
@@ -222,16 +222,16 @@ export class UserService {
       if (!roleExists) {
         throw new Error(`Role with ID '${input.roleId}' does not exist.`);
       }
-      // If setting to Super Admin, actor must be Super Admin
-      if (roleExists.name === 'Super Admin' && !isActorSuperAdmin) {
-        throw new Error('Only a Super Admin can assign the Super Admin role.');
+      // If setting to Administrator, actor must be Administrator
+      if (roleExists.name === 'Administrator' && !isActorAdmin) {
+        throw new Error('Only an Administrator can assign the Administrator role.');
       }
     }
 
-    // Verify company if changing (Only Super Admin can change companyId)
+    // Verify company if changing (Only Administrator can change companyId)
     if (input.companyId && input.companyId !== existingUser.companyId) {
-      if (!isActorSuperAdmin) {
-        throw new Error('Only a Super Admin can change a user\'s company.');
+      if (!isActorAdmin) {
+        throw new Error('Only an Administrator can change a user\'s company.');
       }
       const companyExists = await prisma.company.findUnique({
         where: { id: input.companyId },
@@ -264,13 +264,13 @@ export class UserService {
   async deleteUser(
     id: string,
     companyId?: string,
-    isActorSuperAdmin = false
+    isActorAdmin = false
   ): Promise<any> {
     const existingUser = await this.getUserById(id, companyId);
 
-    // Prevent modifying Super Admin if actor is not Super Admin
-    if (existingUser.role.name === 'Super Admin' && !isActorSuperAdmin) {
-      throw new Error('Unauthorized to modify a Super Admin user.');
+    // Prevent modifying Administrator if actor is not Administrator
+    if (existingUser.role.name === 'Administrator' && !isActorAdmin) {
+      throw new Error('Unauthorized to modify an Administrator user.');
     }
 
     return await prisma.user.update({
@@ -290,13 +290,13 @@ export class UserService {
     id: string,
     status: UserStatus,
     companyId?: string,
-    isActorSuperAdmin = false
+    isActorAdmin = false
   ): Promise<any> {
     const existingUser = await this.getUserById(id, companyId);
 
-    // Prevent modifying Super Admin if actor is not Super Admin
-    if (existingUser.role.name === 'Super Admin' && !isActorSuperAdmin) {
-      throw new Error('Unauthorized to modify a Super Admin user.');
+    // Prevent modifying Administrator if actor is not Administrator
+    if (existingUser.role.name === 'Administrator' && !isActorAdmin) {
+      throw new Error('Unauthorized to modify an Administrator user.');
     }
 
     return await prisma.user.update({
@@ -313,13 +313,13 @@ export class UserService {
     id: string,
     passwordPlaintext: string,
     companyId?: string,
-    isActorSuperAdmin = false
+    isActorAdmin = false
   ): Promise<any> {
     const existingUser = await this.getUserById(id, companyId);
 
-    // Prevent modifying Super Admin if actor is not Super Admin
-    if (existingUser.role.name === 'Super Admin' && !isActorSuperAdmin) {
-      throw new Error('Unauthorized to modify a Super Admin user.');
+    // Prevent modifying Administrator if actor is not Administrator
+    if (existingUser.role.name === 'Administrator' && !isActorAdmin) {
+      throw new Error('Unauthorized to modify an Administrator user.');
     }
 
     const passwordHash = await hashPassword(passwordPlaintext);

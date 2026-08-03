@@ -13,55 +13,55 @@ router.use(authenticate);
 /**
  * GET /api/v1/drivers
  * List drivers with pagination, search, filtering, and sorting.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager
  */
 router.get(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => driverController.getDrivers(req, res)
 );
 
 /**
  * GET /api/v1/drivers/:id
  * Retrieve single driver by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager
  */
 router.get(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => driverController.getDriver(req, res)
 );
 
 /**
  * POST /api/v1/drivers
  * Create a new driver profile.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager
  */
 router.post(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => driverController.createDriver(req, res)
 );
 
 /**
  * PUT /api/v1/drivers/:id
  * Update an existing driver profile by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager
  */
 router.put(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => driverController.updateDriver(req, res)
 );
 
 /**
  * DELETE /api/v1/drivers/:id
  * Delete a driver profile by UUID.
- * Roles: Super Admin, Company Admin
+ * Roles: Administrator, Fleet Manager
  */
 router.delete(
   '/:id',
-  authorize('Super Admin', 'Company Admin'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => driverController.deleteDriver(req, res)
 );
 

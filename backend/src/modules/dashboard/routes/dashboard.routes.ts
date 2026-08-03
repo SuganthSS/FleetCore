@@ -13,11 +13,11 @@ router.use(authenticate);
 /**
  * GET /api/v1/dashboard
  * Return aggregated dashboard analytics overview.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager, Dispatcher, Maintenance Manager, Accountant
  */
 router.get(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Maintenance Manager', 'Accountant'),
   (req, res) => dashboardController.getDashboardOverview(req, res)
 );
 

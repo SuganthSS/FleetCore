@@ -13,55 +13,55 @@ router.use(authenticate);
 /**
  * GET /api/v1/vehicles
  * List vehicles with pagination, search, filtering, and sorting.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager, Maintenance Manager
  */
 router.get(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
   (req, res) => vehicleController.getVehicles(req, res)
 );
 
 /**
  * GET /api/v1/vehicles/:id
- * Retrieve single vehicle by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Retrieve single vehicle profile by UUID.
+ * Roles: Administrator, Fleet Manager, Maintenance Manager
  */
 router.get(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
   (req, res) => vehicleController.getVehicle(req, res)
 );
 
 /**
  * POST /api/v1/vehicles
  * Create a new vehicle record.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager, Maintenance Manager
  */
 router.post(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
   (req, res) => vehicleController.createVehicle(req, res)
 );
 
 /**
  * PUT /api/v1/vehicles/:id
  * Update an existing vehicle record by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager, Maintenance Manager
  */
 router.put(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
   (req, res) => vehicleController.updateVehicle(req, res)
 );
 
 /**
  * DELETE /api/v1/vehicles/:id
  * Delete a vehicle record by UUID.
- * Roles: Super Admin, Company Admin
+ * Roles: Administrator, Fleet Manager
  */
 router.delete(
   '/:id',
-  authorize('Super Admin', 'Company Admin'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => vehicleController.deleteVehicle(req, res)
 );
 

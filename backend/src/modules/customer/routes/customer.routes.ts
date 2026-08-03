@@ -13,55 +13,55 @@ router.use(authenticate);
 /**
  * GET /api/v1/customers
  * List customers with pagination, search, filtering, and sorting.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager, Dispatcher
  */
 router.get(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher'),
   (req, res) => customerController.getCustomers(req, res)
 );
 
 /**
  * GET /api/v1/customers/:id
  * Retrieve single customer profile by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager, Dispatcher
  */
 router.get(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher'),
   (req, res) => customerController.getCustomer(req, res)
 );
 
 /**
  * POST /api/v1/customers
  * Create a new customer profile.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager, Dispatcher
  */
 router.post(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher'),
   (req, res) => customerController.createCustomer(req, res)
 );
 
 /**
  * PUT /api/v1/customers/:id
  * Update an existing customer profile by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager, Dispatcher
  */
 router.put(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher'),
   (req, res) => customerController.updateCustomer(req, res)
 );
 
 /**
  * DELETE /api/v1/customers/:id
  * Delete a customer profile by UUID.
- * Roles: Super Admin, Company Admin
+ * Roles: Administrator, Fleet Manager, Dispatcher
  */
 router.delete(
   '/:id',
-  authorize('Super Admin', 'Company Admin'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher'),
   (req, res) => customerController.deleteCustomer(req, res)
 );
 

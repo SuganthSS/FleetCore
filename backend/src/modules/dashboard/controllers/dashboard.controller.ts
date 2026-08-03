@@ -34,7 +34,7 @@ export class DashboardController {
       const user = req.authenticatedUser;
       let targetCompanyId: string | undefined;
 
-      if (user?.roleName === 'Super Admin') {
+      if (user?.roleName === 'Administrator') {
         targetCompanyId = queryResult.data.companyId;
       } else {
         targetCompanyId = user?.companyId;

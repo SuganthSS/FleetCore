@@ -26,10 +26,10 @@ export class UserController {
       return;
     }
 
-    const isActorSuperAdmin = req.authenticatedUser?.roleName === 'Super Admin';
+    const isActorAdmin = req.authenticatedUser?.roleName === 'Administrator';
 
-    // Tenant isolation: Company Admin can only create users for their own company
-    if (!isActorSuperAdmin) {
+    // Tenant isolation: Default companyId if not provided
+    if (!isActorAdmin) {
       parseResult.data.companyId = req.authenticatedUser?.companyId || '';
     }
 
@@ -73,8 +73,8 @@ export class UserController {
     }
 
     try {
-      const isActorSuperAdmin = req.authenticatedUser?.roleName === 'Super Admin';
-      const companyId = isActorSuperAdmin ? undefined : req.authenticatedUser?.companyId;
+      const isActorAdmin = req.authenticatedUser?.roleName === 'Administrator';
+      const companyId = isActorAdmin ? undefined : req.authenticatedUser?.companyId;
 
       const user = await userService.getUserById(paramResult.data.id, companyId);
       res.status(200).json({
@@ -109,8 +109,8 @@ export class UserController {
     }
 
     try {
-      const isActorSuperAdmin = req.authenticatedUser?.roleName === 'Super Admin';
-      const companyId = isActorSuperAdmin ? undefined : req.authenticatedUser?.companyId;
+      const isActorAdmin = req.authenticatedUser?.roleName === 'Administrator';
+      const companyId = isActorAdmin ? undefined : req.authenticatedUser?.companyId;
 
       const paginatedResult = await userService.getUsers(queryResult.data, companyId);
 
@@ -156,14 +156,14 @@ export class UserController {
     }
 
     try {
-      const isActorSuperAdmin = req.authenticatedUser?.roleName === 'Super Admin';
-      const companyId = isActorSuperAdmin ? undefined : req.authenticatedUser?.companyId;
+      const isActorAdmin = req.authenticatedUser?.roleName === 'Administrator';
+      const companyId = isActorAdmin ? undefined : req.authenticatedUser?.companyId;
 
       const updatedUser = await userService.updateUser(
         paramResult.data.id,
         bodyResult.data,
         companyId,
-        isActorSuperAdmin
+        isActorAdmin
       );
 
       res.status(200).json({
@@ -178,7 +178,7 @@ export class UserController {
         statusCode = 409;
       } else if (message.includes('not found') || message.includes('does not exist')) {
         statusCode = 404;
-      } else if (message.includes('Unauthorized') || message.includes('Only a Super Admin')) {
+      } else if (message.includes('Unauthorized') || message.includes('Only an Administrator')) {
         statusCode = 403;
       }
 
@@ -206,10 +206,10 @@ export class UserController {
     }
 
     try {
-      const isActorSuperAdmin = req.authenticatedUser?.roleName === 'Super Admin';
-      const companyId = isActorSuperAdmin ? undefined : req.authenticatedUser?.companyId;
+      const isActorAdmin = req.authenticatedUser?.roleName === 'Administrator';
+      const companyId = isActorAdmin ? undefined : req.authenticatedUser?.companyId;
 
-      await userService.deleteUser(paramResult.data.id, companyId, isActorSuperAdmin);
+      await userService.deleteUser(paramResult.data.id, companyId, isActorAdmin);
 
       res.status(200).json({
         success: true,
@@ -260,14 +260,14 @@ export class UserController {
     }
 
     try {
-      const isActorSuperAdmin = req.authenticatedUser?.roleName === 'Super Admin';
-      const companyId = isActorSuperAdmin ? undefined : req.authenticatedUser?.companyId;
+      const isActorAdmin = req.authenticatedUser?.roleName === 'Administrator';
+      const companyId = isActorAdmin ? undefined : req.authenticatedUser?.companyId;
 
       const updatedUser = await userService.updateUserStatus(
         paramResult.data.id,
         bodyResult.data.status,
         companyId,
-        isActorSuperAdmin
+        isActorAdmin
       );
 
       res.status(200).json({
@@ -320,14 +320,14 @@ export class UserController {
     }
 
     try {
-      const isActorSuperAdmin = req.authenticatedUser?.roleName === 'Super Admin';
-      const companyId = isActorSuperAdmin ? undefined : req.authenticatedUser?.companyId;
+      const isActorAdmin = req.authenticatedUser?.roleName === 'Administrator';
+      const companyId = isActorAdmin ? undefined : req.authenticatedUser?.companyId;
 
       await userService.resetUserPassword(
         paramResult.data.id,
         bodyResult.data.password,
         companyId,
-        isActorSuperAdmin
+        isActorAdmin
       );
 
       res.status(200).json({

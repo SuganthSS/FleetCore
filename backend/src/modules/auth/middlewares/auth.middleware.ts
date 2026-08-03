@@ -77,13 +77,13 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
   const payload = verification.payload;
 
   const authenticatedUser: AuthenticatedUser = {
-    id: payload.sub,
+    id: payload.userId || payload.sub,
     email: payload.email,
     firstName: '', // Populated downstream if needed
     lastName: '',
     companyId: payload.companyId,
     roleId: payload.roleId,
-    roleName: payload.roleName || '',
+    roleName: payload.role || payload.roleName || '',
   };
 
 

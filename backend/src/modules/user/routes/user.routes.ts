@@ -8,8 +8,8 @@ const router = Router();
 // Apply global authentication middleware to all user endpoints
 router.use(authenticate);
 
-// Restrict access to all endpoints to Super Admin and Company Admin roles only
-router.use(authorize('Super Admin', 'Company Admin'));
+// Restrict access to all endpoints to Administrator role only
+router.use(authorize('Administrator'));
 
 /**
  * GET /api/v1/users

@@ -19,62 +19,65 @@ async function main() {
   // 2. Seed Default Roles
   const defaultRoles = [
     {
-      name: 'Super Admin',
-      description: 'System administrator with unrestricted global access across all platform resources.',
+      name: 'Administrator',
+      description: 'Platform administrator with full unrestricted access to system configuration, user management, and organizational resources.',
       isSystem: true,
       permissions: { all: true, scope: '*' },
     },
     {
-      name: 'Company Admin',
-      description: 'Organization administrator with full management rights within a single tenant company.',
+      name: 'Fleet Manager',
+      description: 'Fleet operations manager managing vehicles, drivers, fuel, maintenance, tracking, and operational analytics.',
       isSystem: true,
       permissions: {
-        company: ['read', 'write', 'delete'],
-        users: ['read', 'write', 'delete'],
-        drivers: ['read', 'write', 'delete'],
         vehicles: ['read', 'write', 'delete'],
-        shipments: ['read', 'write', 'delete'],
-        routes: ['read', 'write', 'delete'],
-        trips: ['read', 'write', 'delete'],
+        drivers: ['read', 'write', 'delete'],
         fuel: ['read', 'write', 'delete'],
         maintenance: ['read', 'write', 'delete'],
+        tracking: ['read', 'write'],
         reports: ['read', 'export'],
-      },
-    },
-    {
-      name: 'Fleet Manager',
-      description: 'Fleet operations manager managing vehicles, drivers, maintenance, and fuel tracking.',
-      isSystem: true,
-      permissions: {
-        vehicles: ['read', 'write'],
-        drivers: ['read', 'write'],
-        trips: ['read', 'write'],
-        fuel: ['read', 'write'],
-        maintenance: ['read', 'write'],
-        reports: ['read'],
+        analytics: ['read'],
       },
     },
     {
       name: 'Dispatcher',
-      description: 'Operational dispatcher managing shipments, routes, and trip assignments.',
+      description: 'Operational dispatcher managing trips, routes, shipments, tracking, and notifications.',
       isSystem: true,
       permissions: {
-        shipments: ['read', 'write'],
-        routes: ['read', 'write'],
-        trips: ['read', 'write'],
-        vehicles: ['read'],
-        drivers: ['read'],
+        trips: ['read', 'write', 'delete'],
+        routes: ['read', 'write', 'delete'],
+        shipments: ['read', 'write', 'delete'],
+        tracking: ['read', 'write'],
+        notifications: ['read', 'write'],
+      },
+    },
+    {
+      name: 'Maintenance Manager',
+      description: 'Maintenance supervisor managing maintenance work orders and vehicle service records.',
+      isSystem: true,
+      permissions: {
+        maintenance: ['read', 'write', 'delete'],
+        vehicles: ['read', 'write'],
+      },
+    },
+    {
+      name: 'Accountant',
+      description: 'Financial officer managing fuel logs, financial reports, and cost analytics.',
+      isSystem: true,
+      permissions: {
+        fuel: ['read', 'write', 'delete'],
+        reports: ['read', 'export'],
+        analytics: ['read'],
       },
     },
     {
       name: 'Driver',
-      description: 'Operational driver executing trips, recording fuel events, and location updates.',
+      description: 'Operational driver executing assigned trips, logging fuel events, and updating live location.',
       isSystem: true,
       permissions: {
         trips: ['read', 'update_status'],
         fuel: ['write'],
-        location: ['write'],
-        notifications: ['read'],
+        tracking: ['write'],
+        profile: ['read', 'write'],
       },
     },
   ];
@@ -98,7 +101,7 @@ async function main() {
   const defaultCompany = await prisma.company.upsert({
     where: { registrationNumber: 'DEMO-FC-2026' },
     update: {
-      name: 'FleetCore Demo Company',
+      name: 'FleetCore Logistics',
       legalName: 'FleetCore Logistics Inc.',
       email: 'admin@fleetcore.demo',
       phone: '+1-800-555-0199',
@@ -110,7 +113,7 @@ async function main() {
       website: 'https://fleetcore.demo',
     },
     create: {
-      name: 'FleetCore Demo Company',
+      name: 'FleetCore Logistics',
       legalName: 'FleetCore Logistics Inc.',
       registrationNumber: 'DEMO-FC-2026',
       taxNumber: 'TX-998877665',
@@ -127,36 +130,86 @@ async function main() {
   });
   console.log(`✅ Company seeded: ${defaultCompany.name}`);
 
-  // 4. Seed Administrator User
+  // 4. Seed Staff Users
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash('Admin@FleetCore2026!', salt);
 
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@fleetcore.demo' },
-    update: {
-      firstName: 'FleetCore',
-      lastName: 'Administrator',
-      passwordHash,
-      companyId: defaultCompany.id,
-      roleId: seededRoles['Super Admin'],
-      department: 'Executive Administration',
-      designation: 'Super Administrator',
-      emailVerified: true,
-    },
-    create: {
+  const staffUsersData = [
+    {
       firstName: 'FleetCore',
       lastName: 'Administrator',
       email: 'admin@fleetcore.demo',
       phone: '+1-800-555-0100',
-      passwordHash,
-      companyId: defaultCompany.id,
-      roleId: seededRoles['Super Admin'],
+      roleName: 'Administrator',
       department: 'Executive Administration',
-      designation: 'Super Administrator',
-      emailVerified: true,
+      designation: 'System Administrator',
     },
-  });
-  console.log(`✅ Administrator User seeded: ${adminUser.email}`);
+    {
+      firstName: 'Marcus',
+      lastName: 'Vance',
+      email: 'fleet.manager@fleetcore.demo',
+      phone: '+1-800-555-0101',
+      roleName: 'Fleet Manager',
+      department: 'Fleet Operations',
+      designation: 'Fleet Operations Manager',
+    },
+    {
+      firstName: 'Sarah',
+      lastName: 'Conner',
+      email: 'dispatcher@fleetcore.demo',
+      phone: '+1-800-555-0102',
+      roleName: 'Dispatcher',
+      department: 'Logistics & Dispatch',
+      designation: 'Head Dispatcher',
+    },
+    {
+      firstName: 'David',
+      lastName: 'Miller',
+      email: 'maintenance@fleetcore.demo',
+      phone: '+1-800-555-0103',
+      roleName: 'Maintenance Manager',
+      department: 'Maintenance & Service',
+      designation: 'Maintenance Supervisor',
+    },
+    {
+      firstName: 'Elena',
+      lastName: 'Rostova',
+      email: 'accountant@fleetcore.demo',
+      phone: '+1-800-555-0104',
+      roleName: 'Accountant',
+      department: 'Finance & Accounting',
+      designation: 'Senior Fleet Accountant',
+    },
+  ];
+
+  for (const staff of staffUsersData) {
+    const user = await prisma.user.upsert({
+      where: { email: staff.email },
+      update: {
+        firstName: staff.firstName,
+        lastName: staff.lastName,
+        passwordHash,
+        companyId: defaultCompany.id,
+        roleId: seededRoles[staff.roleName],
+        department: staff.department,
+        designation: staff.designation,
+        emailVerified: true,
+      },
+      create: {
+        firstName: staff.firstName,
+        lastName: staff.lastName,
+        email: staff.email,
+        phone: staff.phone,
+        passwordHash,
+        companyId: defaultCompany.id,
+        roleId: seededRoles[staff.roleName],
+        department: staff.department,
+        designation: staff.designation,
+        emailVerified: true,
+      },
+    });
+    console.log(`✅ Staff User seeded (${staff.roleName}): ${user.email}`);
+  }
 
   // 5. Seed Drivers and associated Users
   const driverRole = seededRoles['Driver'];
@@ -720,6 +773,7 @@ async function main() {
 
   // 14. Seed Notifications
   const seededNotifications = [];
+  const adminUser = await prisma.user.findFirstOrThrow({ where: { email: 'admin@fleetcore.demo' } });
   const adminId = adminUser.id;
   const user1 = seededDriverUsers[0];
 

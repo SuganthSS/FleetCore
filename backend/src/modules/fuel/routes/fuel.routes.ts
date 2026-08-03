@@ -13,55 +13,55 @@ router.use(authenticate);
 /**
  * GET /api/v1/fuel
  * List fuel records with pagination, search, filtering, and sorting.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager, Accountant, Driver
  */
 router.get(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Accountant', 'Driver'),
   (req, res) => fuelController.getFuelRecords(req, res)
 );
 
 /**
  * GET /api/v1/fuel/:id
  * Retrieve single fuel record by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Fleet Manager, Accountant, Driver
  */
 router.get(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Accountant', 'Driver'),
   (req, res) => fuelController.getFuelRecord(req, res)
 );
 
 /**
  * POST /api/v1/fuel
  * Create a new vehicle refueling record.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager, Accountant, Driver
  */
 router.post(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager', 'Accountant', 'Driver'),
   (req, res) => fuelController.createFuelRecord(req, res)
 );
 
 /**
  * PUT /api/v1/fuel/:id
  * Update an existing fuel record by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Fleet Manager, Accountant
  */
 router.put(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Fleet Manager', 'Accountant'),
   (req, res) => fuelController.updateFuelRecord(req, res)
 );
 
 /**
  * DELETE /api/v1/fuel/:id
  * Delete a fuel record by UUID.
- * Roles: Super Admin, Company Admin
+ * Roles: Administrator, Fleet Manager, Accountant
  */
 router.delete(
   '/:id',
-  authorize('Super Admin', 'Company Admin'),
+  authorize('Administrator', 'Fleet Manager', 'Accountant'),
   (req, res) => fuelController.deleteFuelRecord(req, res)
 );
 

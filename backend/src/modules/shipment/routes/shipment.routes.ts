@@ -13,55 +13,55 @@ router.use(authenticate);
 /**
  * GET /api/v1/shipments
  * List shipments with pagination, search, filtering, and sorting.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Dispatcher
  */
 router.get(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => shipmentController.getShipments(req, res)
 );
 
 /**
  * GET /api/v1/shipments/:id
  * Retrieve single shipment by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager, Dispatcher
+ * Roles: Administrator, Dispatcher
  */
 router.get(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager', 'Dispatcher'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => shipmentController.getShipment(req, res)
 );
 
 /**
  * POST /api/v1/shipments
  * Create a new shipment order.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Dispatcher
  */
 router.post(
   '/',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => shipmentController.createShipment(req, res)
 );
 
 /**
  * PUT /api/v1/shipments/:id
  * Update an existing shipment by UUID.
- * Roles: Super Admin, Company Admin, Fleet Manager
+ * Roles: Administrator, Dispatcher
  */
 router.put(
   '/:id',
-  authorize('Super Admin', 'Company Admin', 'Fleet Manager'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => shipmentController.updateShipment(req, res)
 );
 
 /**
  * DELETE /api/v1/shipments/:id
  * Delete a shipment order by UUID.
- * Roles: Super Admin, Company Admin
+ * Roles: Administrator, Dispatcher
  */
 router.delete(
   '/:id',
-  authorize('Super Admin', 'Company Admin'),
+  authorize('Administrator', 'Dispatcher'),
   (req, res) => shipmentController.deleteShipment(req, res)
 );
 
