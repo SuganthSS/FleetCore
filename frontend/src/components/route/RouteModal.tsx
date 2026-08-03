@@ -1,297 +1,217 @@
 import React, { useEffect } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import type { Route, CreateRoutePayload } from '@/types/route';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/button';
+import { X, Navigation } from 'lucide-react';
+import type { Route, CreateRoutePayload, RouteType, RouteStatus } from '@/types/route';
+
+const routeSchema = z.object({
+  routeCode: z.string().min(2, 'Route code is required'),
+  name: z.string().min(2, 'Route name is required'),
+  origin: z.string().min(2, 'Origin city/address is required'),
+  destination: z.string().min(2, 'Destination city/address is required'),
+  distance: z.number().min(1, 'Distance must be at least 1 mile'),
+  estimatedDuration: z.number().min(0.5, 'Duration must be at least 0.5 hours'),
+  routeType: z.enum(['HIGHWAY', 'URBAN', 'INTERSTATE', 'CROSS_BORDER', 'REGIONAL', 'LAST_MILE']),
+  status: z.enum(['PLANNED', 'ACTIVE', 'OPTIMIZED', 'COMPLETED', 'CANCELLED']),
+});
+
+type RouteFormData = z.infer<typeof routeSchema>;
 
 interface RouteModalProps {
   open: boolean;
   route: Route | null;
   onClose: () => void;
-  onSubmit: (data: CreateRoutePayload) => void;
+  onSubmit: (payload: CreateRoutePayload) => void;
   loading?: boolean;
 }
-
-const routeValidationSchema = z.object({
-  routeCode: z
-    .string()
-    .trim()
-    .min(1, 'Route code is required')
-    .max(50, 'Route code must be 50 characters max'),
-  name: z
-    .string()
-    .trim()
-    .min(1, 'Route name is required')
-    .max(150, 'Route name must be 150 characters max'),
-  description: z
-    .string()
-    .trim()
-    .max(500, 'Description must be 500 characters max')
-    .optional()
-    .nullable(),
-  origin: z
-    .string()
-    .trim()
-    .min(1, 'Origin point is required')
-    .max(200, 'Origin point must be 200 characters max'),
-  destination: z
-    .string()
-    .trim()
-    .min(1, 'Destination point is required')
-    .max(200, 'Destination point must be 200 characters max'),
-  distance: z.coerce
-    .number()
-    .positive('Distance must be positive'),
-  estimatedDuration: z.coerce
-    .number()
-    .int('Duration must be an integer')
-    .positive('Duration must be positive'),
-  routeType: z.enum(['HIGHWAY', 'URBAN', 'INTERSTATE', 'CROSS_BORDER', 'REGIONAL', 'LAST_MILE']),
-  status: z.enum(['PLANNED', 'ACTIVE', 'OPTIMIZED', 'COMPLETED', 'CANCELLED']),
-});
-
-type RouteFormValues = z.infer<typeof routeValidationSchema>;
 
 export const RouteModal: React.FC<RouteModalProps> = ({
   open,
   route,
   onClose,
   onSubmit,
-  loading = false,
+  loading,
 }) => {
-  const { user } = useAuth();
-  const isEdit = !!route;
-
   const {
     register,
     handleSubmit,
     reset,
-    setValue,
-    control,
     formState: { errors },
-  } = useForm<RouteFormValues>({
-    resolver: zodResolver(routeValidationSchema),
+  } = useForm<RouteFormData>({
+    resolver: zodResolver(routeSchema),
     defaultValues: {
       routeCode: '',
       name: '',
-      description: '',
       origin: '',
       destination: '',
-      distance: 0,
-      estimatedDuration: 0,
-      routeType: 'HIGHWAY',
+      distance: 250,
+      estimatedDuration: 4.5,
+      routeType: 'INTERSTATE',
       status: 'PLANNED',
     },
   });
 
-  const originVal = useWatch({ control, name: 'origin' });
-  const destinationVal = useWatch({ control, name: 'destination' });
-  const nameVal = useWatch({ control, name: 'name' });
-
-  // Auto-generate name on origin/destination changes if not manually modified
   useEffect(() => {
-    if (originVal || destinationVal) {
-      const generated = `${originVal || ''} to ${destinationVal || ''}`.trim();
-      // Only set if name is empty, or is equal to previous generated
-      if (!nameVal || nameVal.includes(' to ') || nameVal === '') {
-        setValue('name', generated);
-      }
+    if (route) {
+      reset({
+        routeCode: route.routeCode,
+        name: route.name || route.routeCode,
+        origin: route.originCity || route.originAddress,
+        destination: route.destinationCity || route.destinationAddress,
+        distance: route.plannedDistance || 250,
+        estimatedDuration: route.estimatedDuration || 4.5,
+        routeType: route.routeType,
+        status: route.status,
+      });
+    } else {
+      reset({
+        routeCode: `RT-${Math.floor(1000 + Math.random() * 9000)}`,
+        name: 'Express Freight Route',
+        origin: 'Chicago, IL',
+        destination: 'Detroit, MI',
+        distance: 280,
+        estimatedDuration: 4.5,
+        routeType: 'INTERSTATE',
+        status: 'PLANNED',
+      });
     }
-  }, [originVal, destinationVal, setValue, nameVal]);
-
-
-  useEffect(() => {
-    if (open) {
-      if (route) {
-        reset({
-          routeCode: route.routeCode,
-          name: route.name,
-          description: route.description || '',
-          origin: route.originAddress,
-          destination: route.destinationAddress,
-          distance: route.plannedDistance || 0,
-          estimatedDuration: route.estimatedDuration || 0,
-          routeType: route.routeType,
-          status: route.status,
-        });
-      } else {
-        reset({
-          routeCode: '',
-          name: '',
-          description: '',
-          origin: '',
-          destination: '',
-          distance: 0,
-          estimatedDuration: 0,
-          routeType: 'HIGHWAY',
-          status: 'PLANNED',
-        });
-      }
-    }
-  }, [open, route, reset]);
+  }, [route, open, reset]);
 
   if (!open) return null;
 
-  const handleFormSubmit = (values: RouteFormValues) => {
-    onSubmit({
-      ...values,
-      description: values.description || null,
-      companyId: route?.companyId || user?.companyId || '',
-    });
+  const handleFormSubmit = (data: RouteFormData) => {
+    const payload: CreateRoutePayload = {
+      routeCode: data.routeCode,
+      name: data.name,
+      origin: data.origin,
+      destination: data.destination,
+      distance: Number(data.distance),
+      estimatedDuration: Number(data.estimatedDuration),
+      routeType: data.routeType as RouteType,
+      status: data.status as RouteStatus,
+      companyId: '4044680601076201931',
+    };
+    onSubmit(payload);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+  const labelClass = "block text-xs font-bold text-foreground mb-1";
+  const inputClass = "w-full rounded-xl border border-input bg-background px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all";
 
-      {/* Dialog Container */}
-      <div className="relative w-full max-w-xl rounded-xl border border-border bg-card p-6 shadow-xl z-10 animate-scale-up max-h-[90vh] overflow-y-auto">
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-xs p-4 animate-in fade-in">
+      <div className="w-full max-w-xl rounded-2xl border border-border bg-card shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border pb-4 mb-5">
-          <h2 className="text-lg font-bold text-foreground">
-            {isEdit ? 'Edit Route Corridor' : 'Create Route Corridor'}
-          </h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-primary/10 text-primary">
+              <Navigation className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-foreground">
+                {route ? 'Edit Route Corridor' : 'Add New Route Corridor'}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Specify origin, destination, distance, and route operational type.
+              </p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            aria-label="Close dialog"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Route Code"
-                error={errors.routeCode?.message}
-                {...register('routeCode')}
-                placeholder="e.g. RT-EAST-01"
-              />
-              <Input
-                label="Route Name"
-                error={errors.name?.message}
-                {...register('name')}
-                placeholder="e.g. Austin to Houston Express"
-              />
+        {/* Form Body */}
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Route Code *</label>
+              <input {...register('routeCode')} className={inputClass} placeholder="e.g. RT-8820" />
+              {errors.routeCode && <p className="text-[10px] text-destructive mt-0.5">{errors.routeCode.message}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Origin Point / City"
-                error={errors.origin?.message}
-                {...register('origin')}
-                placeholder="Origin city or full address"
-              />
-              <Input
-                label="Destination Point / City"
-                error={errors.destination?.message}
-                {...register('destination')}
-                placeholder="Destination city or full address"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Planned Distance (km)"
-                type="number"
-                step="any"
-                error={errors.distance?.message}
-                {...register('distance')}
-                placeholder="e.g. 260"
-              />
-              <Input
-                label="Est. Duration (minutes)"
-                type="number"
-                error={errors.estimatedDuration?.message}
-                {...register('estimatedDuration')}
-                placeholder="e.g. 180"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Route Type */}
-              <div className="space-y-1.5 text-left">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Route Classification Type
-                </label>
-                <select
-                  {...register('routeType')}
-                  className="flex h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="URBAN">Urban / Local</option>
-                  <option value="LAST_MILE">Last Mile</option>
-                  <option value="REGIONAL">Regional</option>
-                  <option value="HIGHWAY">Highway</option>
-                  <option value="INTERSTATE">Interstate</option>
-                  <option value="CROSS_BORDER">Cross Border / International</option>
-                </select>
-              </div>
-
-              {/* Status */}
-              <div className="space-y-1.5 text-left">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Route Status
-                </label>
-                <select
-                  {...register('status')}
-                  className="flex h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="PLANNED">Planned</option>
-                  <option value="ACTIVE">Active</option>
-                  <option value="OPTIMIZED">Optimized</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 text-left">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Route Description
-              </label>
-              <textarea
-                {...register('description')}
-                rows={3}
-                className="flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                placeholder="Brief description of routing guidelines, tolls or road hazards..."
-              />
-              {errors.description && (
-                <p className="text-[10px] font-bold text-destructive mt-1">
-                  {errors.description.message}
-                </p>
-              )}
+            <div>
+              <label className={labelClass}>Route Name *</label>
+              <input {...register('name')} className={inputClass} placeholder="e.g. Midwest Freight Mainline" />
+              {errors.name && <p className="text-[10px] text-destructive mt-0.5">{errors.name.message}</p>}
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-border">
-            <Button
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Origin City / Terminal *</label>
+              <input {...register('origin')} className={inputClass} placeholder="e.g. Chicago, IL" />
+              {errors.origin && <p className="text-[10px] text-destructive mt-0.5">{errors.origin.message}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Destination City / Terminal *</label>
+              <input {...register('destination')} className={inputClass} placeholder="e.g. Dallas, TX" />
+              {errors.destination && <p className="text-[10px] text-destructive mt-0.5">{errors.destination.message}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Distance (miles) *</label>
+              <input {...register('distance', { valueAsNumber: true })} type="number" className={inputClass} />
+              {errors.distance && <p className="text-[10px] text-destructive mt-0.5">{errors.distance.message}</p>}
+            </div>
+            <div>
+              <label className={labelClass}>Est. Duration (hours) *</label>
+              <input {...register('estimatedDuration', { valueAsNumber: true })} type="number" step="0.5" className={inputClass} />
+              {errors.estimatedDuration && <p className="text-[10px] text-destructive mt-0.5">{errors.estimatedDuration.message}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Route Type</label>
+              <select {...register('routeType')} className={inputClass}>
+                <option value="HIGHWAY">Highway Corridor</option>
+                <option value="URBAN">Urban Transit</option>
+                <option value="INTERSTATE">Interstate Logistics</option>
+                <option value="CROSS_BORDER">Cross-Border Freight</option>
+                <option value="REGIONAL">Regional Loop</option>
+                <option value="LAST_MILE">Last Mile Delivery</option>
+              </select>
+            </div>
+
+            <div>
+              <label className={labelClass}>Operational Status</label>
+              <select {...register('status')} className={inputClass}>
+                <option value="PLANNED">Planned</option>
+                <option value="ACTIVE">Active</option>
+                <option value="OPTIMIZED">Optimized</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Actions Footer */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+            <button
               type="button"
-              variant="outline"
               onClick={onClose}
-              disabled={loading}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
             >
               Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Route'}
-            </Button>
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            >
+              {loading ? 'Saving Route...' : route ? 'Save Changes' : 'Create Route Corridor'}
+            </button>
           </div>
         </form>
       </div>
     </div>
   );
 };
+
 export default RouteModal;

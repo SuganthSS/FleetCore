@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Edit2, Trash2, ArrowUpDown, MapPin, Navigation, Clock } from 'lucide-react';
+import { Eye, Edit2, Trash2, ArrowUpRight, MapPin, Clock } from 'lucide-react';
 import type { Route } from '@/types/route';
 import { RouteStatusBadge } from './RouteStatusBadge';
 import { RouteTypeBadge } from './RouteTypeBadge';
@@ -23,177 +23,124 @@ export const RouteTable: React.FC<RouteTableProps> = ({
   sortOrder,
   onSort,
 }) => {
-  const renderSortIndicator = (field: string) => {
-    if (sortBy !== field) return <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-40" />;
-    return (
-      <ArrowUpDown className={`ml-1.5 h-3.5 w-3.5 text-primary ${sortOrder === 'desc' ? 'rotate-180' : ''}`} />
-    );
-  };
-
-  const formatDuration = (minutes: number | null) => {
-    if (!minutes) return '—';
-    const hrs = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
-    if (hrs === 0) return `${mins} mins`;
-    return `${hrs}h ${mins}m`;
+  const getSortIcon = (field: string) => {
+    if (sortBy !== field) return null;
+    return <ArrowUpRight className={`h-3 w-3 inline-block ml-1 transition-transform ${sortOrder === 'desc' ? 'rotate-90' : ''}`} />;
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
+    <div className="rounded-2xl border border-border bg-card shadow-xs overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-left text-sm">
+        <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border bg-muted/30 sticky top-0 z-10">
+            <tr className="border-b border-border bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider">
               <th
-                onClick={() => onSort('routeCode')}
-                className="p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] cursor-pointer hover:text-foreground select-none"
+                onClick={() => onSort('name')}
+                className="py-3.5 px-4 cursor-pointer hover:text-foreground transition-colors"
               >
-                <div className="flex items-center">
-                  Route Code
-                  {renderSortIndicator('routeCode')}
-                </div>
+                Route Code {getSortIcon('name')}
               </th>
-              <th className="p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
-                Origin
-              </th>
-              <th className="p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
-                Destination
-              </th>
+              <th className="py-3.5 px-4">Origin Corridor</th>
+              <th className="py-3.5 px-4">Destination Corridor</th>
               <th
                 onClick={() => onSort('distance')}
-                className="p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] cursor-pointer hover:text-foreground select-none"
+                className="py-3.5 px-4 cursor-pointer hover:text-foreground transition-colors"
               >
-                <div className="flex items-center">
-                  Distance
-                  {renderSortIndicator('distance')}
-                </div>
+                Distance & ETA {getSortIcon('distance')}
               </th>
-              <th className="p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
-                Estimated Duration
-              </th>
-              <th className="p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
-                Route Type
-              </th>
-              <th className="p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
-                Status
-              </th>
-              <th
-                onClick={() => onSort('createdAt')}
-                className="p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] cursor-pointer hover:text-foreground select-none"
-              >
-                <div className="flex items-center">
-                  Created Date
-                  {renderSortIndicator('createdAt')}
-                </div>
-              </th>
-              <th className="p-4 font-bold text-muted-foreground uppercase tracking-wider text-[10px] text-right">
-                Actions
-              </th>
+              <th className="py-3.5 px-4">Type</th>
+              <th className="py-3.5 px-4">Status</th>
+              <th className="py-3.5 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
-            {routes.map((route) => {
-              return (
-                <tr
-                  key={route.id}
-                  className="hover:bg-muted/30 transition-colors group"
-                >
-                  {/* Route Code */}
-                  <td className="p-4 font-bold text-primary select-all">
-                    {route.routeCode}
-                  </td>
+            {routes.map((route) => (
+              <tr
+                key={route.id}
+                onClick={() => onView(route)}
+                className="group hover:bg-muted/20 transition-colors cursor-pointer"
+              >
+                {/* Route Code */}
+                <td className="py-3.5 px-4 font-mono font-bold text-primary group-hover:underline">
+                  {route.routeCode}
+                </td>
 
-                  {/* Origin */}
-                  <td className="p-4 text-xs font-semibold text-foreground max-w-[220px] truncate">
-                    <span className="flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                      {route.originCity || route.originAddress}
-                    </span>
-                  </td>
+                {/* Origin */}
+                <td className="py-3.5 px-4">
+                  <div className="flex items-center gap-1.5 text-foreground font-semibold">
+                    <MapPin className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <span>{route.originCity || route.originAddress}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground block truncate max-w-[160px]">
+                    {route.originAddress}
+                  </span>
+                </td>
 
-                  {/* Destination */}
-                  <td className="p-4 text-xs font-semibold text-foreground max-w-[220px] truncate">
-                    <span className="flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-rose-500 shrink-0" />
-                      {route.destinationCity || route.destinationAddress}
-                    </span>
-                  </td>
+                {/* Destination */}
+                <td className="py-3.5 px-4">
+                  <div className="flex items-center gap-1.5 text-foreground font-semibold">
+                    <MapPin className="h-3.5 w-3.5 text-destructive shrink-0" />
+                    <span>{route.destinationCity || route.destinationAddress}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground block truncate max-w-[160px]">
+                    {route.destinationAddress}
+                  </span>
+                </td>
 
-                  {/* Distance */}
-                  <td className="p-4 text-xs font-semibold text-foreground">
-                    {route.plannedDistance ? (
-                      <span className="flex items-center gap-1">
-                        <Navigation className="h-3 w-3 text-muted-foreground/60" />
-                        {route.plannedDistance} km
-                      </span>
-                    ) : (
-                      '—'
-                    )}
-                  </td>
+                {/* Distance & Duration */}
+                <td className="py-3.5 px-4">
+                  <div className="font-bold text-foreground">
+                    {route.plannedDistance ? `${route.plannedDistance} mi` : 'N/A'}
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {route.estimatedDuration ? `${route.estimatedDuration} hrs` : 'N/A'}
+                  </div>
+                </td>
 
-                  {/* Estimated Duration */}
-                  <td className="p-4 text-xs font-medium text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3 text-muted-foreground/50" />
-                      {formatDuration(route.estimatedDuration)}
-                    </span>
-                  </td>
+                {/* Type */}
+                <td className="py-3.5 px-4">
+                  <RouteTypeBadge type={route.routeType} size="sm" />
+                </td>
 
-                  {/* Route Type */}
-                  <td className="p-4">
-                    <RouteTypeBadge type={route.routeType} />
-                  </td>
+                {/* Status */}
+                <td className="py-3.5 px-4">
+                  <RouteStatusBadge status={route.status} size="sm" />
+                </td>
 
-                  {/* Status */}
-                  <td className="p-4">
-                    <RouteStatusBadge status={route.status} />
-                  </td>
-
-                  {/* Created Date */}
-                  <td className="p-4 text-xs text-muted-foreground">
-                    {new Date(route.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => onView(route)}
-                        className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                        title="View Details"
-                        aria-label="View Details"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onEdit(route)}
-                        className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                        title="Edit Route"
-                        aria-label="Edit Route"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(route.id)}
-                        className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        title="Delete Route"
-                        aria-label="Delete Route"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                {/* Actions */}
+                <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => onView(route)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title="View Details"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => onEdit(route)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title="Edit Route"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(route.id)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      title="Delete Route"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
     </div>
   );
 };
+
 export default RouteTable;

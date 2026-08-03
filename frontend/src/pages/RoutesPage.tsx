@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { routeService } from '@/services/route.service';
-import type { Route, RouteStatus, RouteType, CreateRoutePayload } from '@/types/route';
+import type { Route, RouteType, RouteStatus, CreateRoutePayload } from '@/types/route';
+import { ConfirmDialog } from '@/components/ui';
 import {
-  PageHeader,
-  Button,
-  ErrorState,
-  EmptyState,
-  ConfirmDialog,
-} from '@/components/ui';
-import {
-  RouteTable,
+  RouteHeader,
+  RouteKPICards,
   RouteToolbar,
+  RouteTable,
+  RouteCards,
   RouteModal,
-  RouteDetailsDrawer,
+  RouteDrawer,
   RouteSkeleton,
 } from '@/components/route';
+import { CheckCircle2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const RoutesPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -29,6 +26,7 @@ export const RoutesPage: React.FC = () => {
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
   // Modal / Drawer state
   const [modalOpen, setModalOpen] = useState(false);
@@ -40,7 +38,7 @@ export const RoutesPage: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Fetch Routes
+  // Fetch Routes with TanStack Query
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['routes', search, status, routeType, page, limit, sortBy, sortOrder],
     queryFn: async () => {
@@ -57,11 +55,21 @@ export const RoutesPage: React.FC = () => {
     },
   });
 
-  // Create Route Mutation
+  // Calculate KPI Counts from cached data
+  const kpiData = {
+    total: data?.total || 0,
+    active: data?.items.filter((r) => r.status === 'ACTIVE').length || 0,
+    planned: data?.items.filter((r) => r.status === 'PLANNED').length || 0,
+    urban: data?.items.filter((r) => r.routeType === 'URBAN').length || 0,
+    interstate: data?.items.filter((r) => r.routeType === 'INTERSTATE' || r.routeType === 'HIGHWAY').length || 0,
+    crossBorder: data?.items.filter((r) => r.routeType === 'CROSS_BORDER').length || 0,
+  };
+
+  // Create Mutation
   const createMutation = useMutation({
     mutationFn: routeService.createRoute,
     onSuccess: (res) => {
-      setSuccessMessage(`Route '${res.data.routeCode}' created successfully.`);
+      setSuccessMessage(`Route corridor '${res.data.routeCode}' created successfully.`);
       setErrorMessage(null);
       void queryClient.invalidateQueries({ queryKey: ['routes'] });
       setModalOpen(false);
@@ -73,13 +81,13 @@ export const RoutesPage: React.FC = () => {
     },
   });
 
-  // Update Route Mutation
+  // Update Mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<CreateRoutePayload> }) => {
       return routeService.updateRoute(id, payload);
     },
     onSuccess: (res) => {
-      setSuccessMessage(`Route '${res.data.routeCode}' updated successfully.`);
+      setSuccessMessage(`Route corridor '${res.data.routeCode}' updated successfully.`);
       setErrorMessage(null);
       void queryClient.invalidateQueries({ queryKey: ['routes'] });
       setModalOpen(false);
@@ -91,15 +99,14 @@ export const RoutesPage: React.FC = () => {
     },
   });
 
-  // Delete Route Mutation
+  // Delete Mutation
   const deleteMutation = useMutation({
     mutationFn: routeService.deleteRoute,
     onSuccess: () => {
-      setSuccessMessage('Route record deleted successfully.');
+      setSuccessMessage('Route corridor deleted successfully.');
       setErrorMessage(null);
       void queryClient.invalidateQueries({ queryKey: ['routes'] });
       setDeleteDialogOpen(false);
-      setSelectedRoute(null);
       clearAlertLater();
     },
     onError: (err: any) => {
@@ -112,36 +119,42 @@ export const RoutesPage: React.FC = () => {
   const clearAlertLater = () => {
     setTimeout(() => {
       setSuccessMessage(null);
-    }, 5000);
+    }, 4000);
   };
 
   // Handlers
-  const handleCreateClick = () => {
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+    setPage(1);
+  };
+
+  const handleOpenAddModal = () => {
     setSelectedRoute(null);
+    setErrorMessage(null);
     setModalOpen(true);
   };
 
-  const handleEditClick = (route: Route) => {
+  const handleOpenEditModal = (route: Route) => {
     setSelectedRoute(route);
+    setErrorMessage(null);
     setModalOpen(true);
   };
 
-  const handleViewClick = (route: Route) => {
+  const handleOpenDetailsDrawer = (route: Route) => {
     setSelectedRoute(route);
     setDrawerOpen(true);
   };
 
-  const handleDeleteClick = (id: string) => {
-    const route = data?.items.find((item) => item.id === id);
+  const handleOpenDeleteDialog = (id: string) => {
+    const route = data?.items.find((r) => r.id === id);
     if (route) {
       setSelectedRoute(route);
       setDeleteDialogOpen(true);
-    }
-  };
-
-  const handleConfirmDelete = () => {
-    if (selectedRoute) {
-      deleteMutation.mutate(selectedRoute.id);
     }
   };
 
@@ -153,14 +166,10 @@ export const RoutesPage: React.FC = () => {
     }
   };
 
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('desc');
+  const handleConfirmDelete = () => {
+    if (selectedRoute) {
+      deleteMutation.mutate(selectedRoute.id);
     }
-    setPage(1);
   };
 
   const handleClearFilters = () => {
@@ -170,48 +179,82 @@ export const RoutesPage: React.FC = () => {
     setPage(1);
   };
 
-  const handleRefresh = async () => {
-    await refetch();
-  };
+  if (isLoading) {
+    return <RouteSkeleton />;
+  }
 
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= (data?.totalPages || 1)) {
-      setPage(newPage);
-    }
-  };
+  if (error) {
+    return (
+      <div className="p-10 flex flex-col items-center justify-center text-center space-y-4">
+        <div className="p-4 rounded-full bg-destructive/10 text-destructive">
+          <AlertCircle className="h-8 w-8" />
+        </div>
+        <h2 className="text-lg font-bold text-foreground">Failed to Load Routes Directory</h2>
+        <p className="text-xs text-muted-foreground max-w-sm">
+          {error instanceof Error ? error.message : 'An error occurred while connecting to the route service.'}
+        </p>
+        <button
+          onClick={() => void refetch()}
+          className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:bg-primary/90 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
-  const isLoadingData = isLoading || isFetching;
+  const pagination = data
+    ? {
+        total: data.total,
+        page: data.page,
+        limit: data.limit,
+        totalPages: data.totalPages,
+        start: (data.page - 1) * data.limit + 1,
+        end: Math.min(data.page * data.limit, data.total),
+      }
+    : null;
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        title="Routes"
-        description="Manage logistics routes, origin–destination corridors and transportation planning."
-        actions={
-          <Button onClick={handleCreateClick} className="flex items-center gap-2">
-            <Plus className="h-4.5 w-4.5" />
-            Create Route
-          </Button>
-        }
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <RouteHeader
+        totalRoutes={data?.total || 0}
+        onAddRoute={handleOpenAddModal}
+        onRefresh={() => void refetch()}
+        isRefreshing={isFetching}
       />
 
-      {/* Notifications */}
+      {/* KPI Cards */}
+      <RouteKPICards
+        data={kpiData}
+        activeStatusFilter={status}
+        activeTypeFilter={routeType}
+        onStatusFilterChange={(val) => {
+          setStatus(val);
+          setPage(1);
+        }}
+        onTypeFilterChange={(val) => {
+          setRouteType(val);
+          setPage(1);
+        }}
+      />
+
+      {/* Success / Error Alerts */}
       {successMessage && (
-        <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-600 dark:text-emerald-400 animate-scale-up">
-          <CheckCircle2 className="h-5 w-5 shrink-0" />
-          <span className="font-semibold">{successMessage}</span>
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+          <CheckCircle2 className="h-4.5 w-4.5 shrink-0" />
+          <span>{successMessage}</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="flex items-center gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-600 dark:text-rose-400 animate-scale-up">
-          <AlertCircle className="h-5 w-5 shrink-0" />
-          <span className="font-semibold">{errorMessage}</span>
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-xs font-semibold text-destructive">
+          <AlertCircle className="h-4.5 w-4.5 shrink-0" />
+          <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Toolbar Filters */}
+      {/* Toolbar */}
       <RouteToolbar
         search={search}
         onSearchChange={(val) => {
@@ -228,88 +271,112 @@ export const RoutesPage: React.FC = () => {
           setRouteType(val);
           setPage(1);
         }}
-        onRefresh={handleRefresh}
+        sortBy={sortBy}
+        onSortByChange={(val) => {
+          setSortBy(val);
+          setPage(1);
+        }}
+        sortOrder={sortOrder}
+        onSortOrderChange={(val) => setSortOrder(val)}
+        viewMode={viewMode}
+        onViewModeChange={(mode) => setViewMode(mode)}
         onClearFilters={handleClearFilters}
-        isRefreshing={isFetching}
       />
 
-      {/* Main Table Content */}
-      {isLoading && !data ? (
-        <RouteSkeleton />
-      ) : error ? (
-        <ErrorState
-          title="Error loading routes"
-          description={error instanceof Error ? error.message : 'An unexpected error occurred while fetching routes data.'}
-          onRetry={handleRefresh}
-        />
-      ) : !data || data.items.length === 0 ? (
-        <EmptyState
-          title="No routes found"
-          description={
-            hasActiveFilters()
-              ? 'Try resetting the filters or modifying your search query to locate route corridors.'
-              : 'Add your first routing corridor to begin logistics and trip planning.'
-          }
-          action={
-            !hasActiveFilters() ? (
-              <Button onClick={handleCreateClick} className="mt-2.5">
-                Create Route
-              </Button>
-            ) : (
-              <Button variant="outline" onClick={handleClearFilters} className="mt-2.5">
-                Clear Filters
-              </Button>
-            )
-          }
-        />
-      ) : (
+      {/* Data Views */}
+      {data && data.items.length > 0 ? (
         <div className="space-y-4">
-          <RouteTable
-            routes={data.items}
-            onView={handleViewClick}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          />
+          {viewMode === 'table' ? (
+            <RouteTable
+              routes={data.items}
+              onView={handleOpenDetailsDrawer}
+              onEdit={handleOpenEditModal}
+              onDelete={handleOpenDeleteDialog}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+            />
+          ) : (
+            <RouteCards
+              routes={data.items}
+              onView={handleOpenDetailsDrawer}
+              onEdit={handleOpenEditModal}
+              onDelete={handleOpenDeleteDialog}
+            />
+          )}
 
-          {/* Pagination Controls */}
-          {data.totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm">
-              <span className="text-xs font-semibold text-muted-foreground">
-                Showing Page <strong className="text-foreground">{data.page}</strong> of{' '}
-                <strong className="text-foreground">{data.totalPages}</strong> (
-                <strong className="text-foreground">{data.total}</strong> total routes)
+          {/* Pagination */}
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl shadow-xs">
+              <span className="text-xs text-muted-foreground font-medium">
+                Showing {pagination.start} to {pagination.end} of {pagination.total} routes
               </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1 || isLoadingData}
-                  className="flex items-center gap-1"
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 rounded-xl border border-input bg-background text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-40 transition-colors flex items-center gap-1"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-3.5 w-3.5" />
                   Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page === data.totalPages || isLoadingData}
-                  className="flex items-center gap-1"
+                </button>
+                <div className="flex items-center gap-1">
+                  {[...Array(pagination.totalPages)].map((_, idx) => {
+                    const pageNum = idx + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`h-8 w-8 rounded-xl text-xs font-bold transition-colors ${
+                          page === pageNum
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setPage((p) => Math.min(p + 1, pagination.totalPages))}
+                  disabled={page === pagination.totalPages}
+                  className="px-3 py-1.5 rounded-xl border border-input bg-background text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-40 transition-colors flex items-center gap-1"
                 >
                   Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
           )}
         </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center space-y-3">
+          <p className="text-sm font-bold text-foreground">No routes found</p>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            {search || status || routeType
+              ? 'Try adjusting your search query or reset active filters.'
+              : 'Create route corridors to start planning freight trips.'}
+          </p>
+          {search || status || routeType ? (
+            <button
+              onClick={handleClearFilters}
+              className="px-4 py-2 rounded-xl border border-input text-xs font-bold text-foreground hover:bg-muted transition-colors"
+            >
+              Clear Filters
+            </button>
+          ) : (
+            <button
+              onClick={handleOpenAddModal}
+              className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-sm hover:bg-primary/90 transition-colors"
+            >
+              + Add First Route
+            </button>
+          )}
+        </div>
       )}
 
-      {/* Route Modal Form */}
+      {/* Modal */}
       <RouteModal
         open={modalOpen}
         route={selectedRoute}
@@ -318,38 +385,31 @@ export const RoutesPage: React.FC = () => {
         loading={createMutation.isPending || updateMutation.isPending}
       />
 
-      {/* Details Side Drawer */}
-      <RouteDetailsDrawer
-        route={selectedRoute}
+      {/* Drawer */}
+      <RouteDrawer
         open={drawerOpen}
-        onClose={() => {
-          setDrawerOpen(false);
-          setSelectedRoute(null);
-        }}
+        route={selectedRoute}
+        onClose={() => setDrawerOpen(false)}
       />
 
-      {/* Delete Confirmation Dialogue */}
+      {/* Delete Confirmation */}
       <ConfirmDialog
         open={deleteDialogOpen}
-        title="Confirm Route Deletion"
-        description={`Are you absolutely sure you want to delete route ${
-          selectedRoute?.routeCode || ''
-        }? This planning route record will be permanently deleted. This action is irreversible.`}
+        destructive
+        title="Delete Route Corridor?"
+        description={
+          selectedRoute
+            ? `Are you sure you want to delete route corridor '${selectedRoute.routeCode}'? This action cannot be undone.`
+            : 'Are you sure you want to delete this route corridor?'
+        }
         confirmLabel="Delete Route"
-        cancelLabel="Keep Record"
-        onConfirm={handleConfirmDelete}
-        onCancel={() => {
-          setDeleteDialogOpen(false);
-          setSelectedRoute(null);
-        }}
+        cancelLabel="Keep Route"
         loading={deleteMutation.isPending}
-        destructive={true}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteDialogOpen(false)}
       />
     </div>
   );
-
-  function hasActiveFilters() {
-    return !!(search || status || routeType);
-  }
 };
+
 export default RoutesPage;

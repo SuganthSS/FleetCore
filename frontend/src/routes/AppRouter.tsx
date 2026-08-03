@@ -12,6 +12,7 @@ import { DriverProfilePage } from '@/pages/DriverProfilePage';
 import { CustomersPage } from '@/pages/CustomersPage';
 import { ShipmentsPage } from '@/pages/ShipmentsPage';
 import { RoutesPage } from '@/pages/RoutesPage';
+import { RouteDetailsPage } from '@/pages/RouteDetailsPage';
 import { TripsPage } from '@/pages/TripsPage';
 import { FuelPage } from '@/pages/FuelPage';
 import { MaintenancePage } from '@/pages/MaintenancePage';
@@ -98,6 +99,10 @@ const router = createBrowserRouter([
           {
             path: '/routes',
             element: <RoutesPage />,
+          },
+          {
+            path: '/routes/:id',
+            element: <RouteDetailsPage />,
           },
           {
             path: '/trips',
