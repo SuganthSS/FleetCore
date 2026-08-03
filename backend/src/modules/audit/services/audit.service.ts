@@ -177,13 +177,18 @@ export const auditService = {
 
     // Check if Prisma AuditLog table exists and has entries
     try {
-      // @ts-expect-error Prisma model might not be generated if client locked
-      if (prisma.auditLog) {
-        // @ts-expect-error Prisma model query
-        const dbLogs = await prisma.auditLog.findMany({
+      const prismaClient = prisma as unknown as {
+        auditLog?: {
+          findMany: (args: unknown) => Promise<Array<Record<string, unknown>>>;
+        };
+      };
+
+      if (prismaClient.auditLog) {
+        const dbLogs = await prismaClient.auditLog.findMany({
           orderBy: { timestamp: 'desc' },
           take: 100,
         });
+
 
         if (dbLogs && dbLogs.length > 0) {
           logs = dbLogs.map((d: Record<string, unknown>) => ({
