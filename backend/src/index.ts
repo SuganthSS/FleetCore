@@ -22,6 +22,7 @@ import { dashboardRoutes } from './modules/dashboard';
 import { userRoutes } from './modules/user';
 import { roleRoutes } from './modules/role';
 import { auditRoutes } from './modules/audit';
+import { settingsRoutes } from './modules/settings';
 import { initSocket } from './socket';
 
 const app: Application = express();
@@ -62,6 +63,8 @@ app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/roles', roleRoutes);
 app.use('/api/v1/audit', auditRoutes);
+app.use('/api/v1/settings', settingsRoutes);
+
 
 
 

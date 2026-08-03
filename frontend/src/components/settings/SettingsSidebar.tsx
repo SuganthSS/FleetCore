@@ -1,23 +1,15 @@
 import React from 'react';
 import {
-  Building,
+  Building2,
   Sliders,
   Palette,
   Bell,
-  Shield,
+  ShieldCheck,
   Cpu,
-  BrainCircuit,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
-
-export type SettingsTab =
-  | 'profile'
-  | 'general'
-  | 'appearance'
-  | 'notifications'
-  | 'security'
-  | 'integrations'
-  | 'ai';
+import type { SettingsTab } from '@/types/settings';
 
 interface SettingsSidebarProps {
   activeTab: SettingsTab;
@@ -28,20 +20,20 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   activeTab,
   onTabChange,
 }) => {
-  const sections = [
-    { id: 'profile', name: 'Company Profile', icon: Building },
+  const sections: { id: SettingsTab; name: string; icon: React.ElementType; badge?: string }[] = [
+    { id: 'profile', name: 'Company Profile', icon: Building2 },
     { id: 'general', name: 'General Settings', icon: Sliders },
     { id: 'appearance', name: 'Appearance', icon: Palette },
     { id: 'notifications', name: 'Notifications', icon: Bell },
-    { id: 'security', name: 'Security', icon: Shield },
-    { id: 'integrations', name: 'Integrations', icon: Cpu },
-    { id: 'ai', name: 'AI Settings', icon: BrainCircuit, badge: 'Soon' },
+    { id: 'security', name: 'Security & API Keys', icon: ShieldCheck },
+    { id: 'integrations', name: 'Integrations & Services', icon: Cpu },
+    { id: 'ai', name: 'Groq AI Settings', icon: Sparkles, badge: 'Groq LPU' },
   ];
 
   return (
     <div className="flex flex-col gap-1 w-full lg:w-64 shrink-0 rounded-xl border border-border bg-card p-3 shadow-xs text-left">
       <div className="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-        System Preferences
+        Organization Configuration
       </div>
       {sections.map((sec) => {
         const Icon = sec.icon;
@@ -49,9 +41,9 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         return (
           <button
             key={sec.id}
-            onClick={() => onTabChange(sec.id as SettingsTab)}
+            onClick={() => onTabChange(sec.id)}
             className={cn(
-              'flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-bold transition-all duration-150',
+              'flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-all duration-150',
               isActive
                 ? 'bg-primary text-primary-foreground shadow-xs'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -62,10 +54,14 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
               <span>{sec.name}</span>
             </span>
             {sec.badge && (
-              <span className={cn(
-                'px-1.5 py-0.5 rounded-md text-[9px] font-bold tracking-wider uppercase',
-                isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-muted text-muted-foreground border border-border'
-              )}>
+              <span
+                className={cn(
+                  'px-1.5 py-0.5 rounded-md text-[9px] font-bold tracking-wider uppercase',
+                  isActive
+                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                    : 'bg-primary/10 text-primary border border-primary/20'
+                )}
+              >
                 {sec.badge}
               </span>
             )}
