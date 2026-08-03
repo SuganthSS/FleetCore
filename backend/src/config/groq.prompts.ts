@@ -10,7 +10,7 @@ Provide high-precision, data-driven operational intelligence.
 NEVER reference non-Groq AI models.
 ALWAYS format responses strictly as JSON when structured telemetry analysis is requested.`,
 
-  FLEET_EXECUTIVE_SUMMARY: (telemetryData: Record<string, unknown>) => `
+  FLEET_EXECUTIVE_SUMMARY: <T extends object>(telemetryData: T) => `
 Analyze the following operational fleet telemetry and generate an Executive Summary JSON response:
 Telemetry Context: ${JSON.stringify(telemetryData)}
 
@@ -24,7 +24,7 @@ Return ONLY a JSON object with this exact schema:
   "fleetEfficiencyIndex": "string"
 }`,
 
-  PREDICTIVE_MAINTENANCE: (maintenanceData: Record<string, unknown>) => `
+  PREDICTIVE_MAINTENANCE: <T extends object>(maintenanceData: T) => `
 Perform predictive maintenance risk scoring on the following vehicle service logs and diagnostic telemetry:
 Data: ${JSON.stringify(maintenanceData)}
 
@@ -43,7 +43,7 @@ Return ONLY a JSON object with this exact schema:
   ]
 }`,
 
-  ROUTE_OPTIMIZATION: (routeData: Record<string, unknown>) => `
+  ROUTE_OPTIMIZATION: <T extends object>(routeData: T) => `
 Analyze active fleet delivery routes and traffic bottleneck telemetry:
 Data: ${JSON.stringify(routeData)}
 
@@ -61,7 +61,7 @@ Return ONLY a JSON object with this exact schema:
   ]
 }`,
 
-  FUEL_COST_FORECAST: (fuelData: Record<string, unknown>) => `
+  FUEL_COST_FORECAST: <T extends object>(fuelData: T) => `
 Evaluate current fuel expenditures, refueling logs, and market trends:
 Data: ${JSON.stringify(fuelData)}
 
@@ -79,7 +79,7 @@ Return ONLY a JSON object with this exact schema:
   ]
 }`,
 
-  OPERATIONAL_RECOMMENDATIONS: (allMetrics: Record<string, unknown>) => `
+  OPERATIONAL_RECOMMENDATIONS: <T extends object>(allMetrics: T) => `
 Generate prioritized operational recommendations based on aggregated fleet data:
 Metrics: ${JSON.stringify(allMetrics)}
 
