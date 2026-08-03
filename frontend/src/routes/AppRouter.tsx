@@ -16,6 +16,7 @@ import { ShipmentProfilePage } from '@/pages/ShipmentProfilePage';
 import { RoutesPage } from '@/pages/RoutesPage';
 import { RouteDetailsPage } from '@/pages/RouteDetailsPage';
 import { TripsPage } from '@/pages/TripsPage';
+import { TripDetailsPage } from '@/pages/TripDetailsPage';
 import { FuelPage } from '@/pages/FuelPage';
 import { MaintenancePage } from '@/pages/MaintenancePage';
 import { TrackingPage } from '@/pages/TrackingPage';
@@ -117,6 +118,10 @@ const router = createBrowserRouter([
           {
             path: '/trips',
             element: <TripsPage />,
+          },
+          {
+            path: '/trips/:id',
+            element: <TripDetailsPage />,
           },
           {
             path: '/fuel',

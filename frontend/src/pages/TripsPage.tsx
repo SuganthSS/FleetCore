@@ -1,25 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { tripService } from '@/services/trip.service';
 import { vehicleService } from '@/services/vehicle.service';
 import { driverService } from '@/services/driver.service';
 import { shipmentService } from '@/services/shipment.service';
 import { routeService } from '@/services/route.service';
 import type { Trip, TripStatus, CreateTripPayload } from '@/types/trip';
+import { Button, ConfirmDialog } from '@/components/ui';
 import {
-  PageHeader,
-  Button,
-  ErrorState,
-  EmptyState,
-  ConfirmDialog,
-} from '@/components/ui';
-import {
-  TripTable,
+  TripHeader,
+  TripKPICards,
   TripToolbar,
+  TripTable,
+  TripCards,
+  TripDrawer,
   TripModal,
-  TripDetailsDrawer,
   TripSkeleton,
+  TripEmptyState,
+  TripErrorState,
 } from '@/components/trip';
 
 export const TripsPage: React.FC = () => {
@@ -30,12 +29,15 @@ export const TripsPage: React.FC = () => {
   const [status, setStatus] = useState('');
   const [vehicleId, setVehicleId] = useState('');
   const [driverId, setDriverId] = useState('');
+  const [shipmentId, setShipmentId] = useState('');
+  const [routeId, setRouteId] = useState('');
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
-  // Modal / Drawer state
+  // Modal / Drawer / Dialog state
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -47,7 +49,7 @@ export const TripsPage: React.FC = () => {
 
   // Fetch Trips
   const { data, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ['trips', search, status, vehicleId, driverId, page, limit, sortBy, sortOrder],
+    queryKey: ['trips', search, status, vehicleId, driverId, shipmentId, routeId, page, limit, sortBy, sortOrder],
     queryFn: async () => {
       const response = await tripService.getTrips({
         page,
@@ -56,6 +58,8 @@ export const TripsPage: React.FC = () => {
         status: status ? (status as TripStatus) : undefined,
         vehicleId: vehicleId || undefined,
         driverId: driverId || undefined,
+        shipmentId: shipmentId || undefined,
+        routeId: routeId || undefined,
         sortBy,
         sortOrder,
       });
@@ -63,8 +67,22 @@ export const TripsPage: React.FC = () => {
     },
   });
 
-  // Fetch auxiliary resources for dropdown selects
-  const { data: vehiclesData } = useQuery({
+  // Calculate KPI Summary
+  const kpiData = useMemo(() => {
+    const items = data?.items || [];
+    const total = data?.total || 0;
+    const scheduled = items.filter((i) => i.status === 'SCHEDULED').length;
+    const dispatched = items.filter((i) => i.status === 'DISPATCHED').length;
+    const inTransit = items.filter((i) => i.status === 'IN_TRANSIT').length;
+    const paused = items.filter((i) => i.status === 'PAUSED').length;
+    const completed = items.filter((i) => i.status === 'COMPLETED').length;
+    const issues = items.filter((i) => i.status === 'CANCELLED' || i.status === 'FAILED').length;
+
+    return { total, scheduled, dispatched, inTransit, paused, completed, issues };
+  }, [data]);
+
+  // Auxiliary data queries
+  const { data: rawVehiclesData } = useQuery({
     queryKey: ['vehicles-list-all'],
     queryFn: async () => {
       const response = await vehicleService.getVehicles({ limit: 100 });
@@ -72,13 +90,24 @@ export const TripsPage: React.FC = () => {
     },
   });
 
-  const { data: driversData } = useQuery({
+  const vehiclesData = useMemo(() => {
+    return (rawVehiclesData || []).map((v) => ({ id: v.id, name: v.registrationNumber }));
+  }, [rawVehiclesData]);
+
+  const { data: rawDriversData } = useQuery({
     queryKey: ['drivers-list-all'],
     queryFn: async () => {
       const response = await driverService.getDrivers({ limit: 100 });
       return response.data.items;
     },
   });
+
+  const driversData = useMemo(() => {
+    return (rawDriversData || []).map((d) => {
+      const name = d.user ? `${d.user.firstName || ''} ${d.user.lastName || ''}`.trim() : d.employeeId;
+      return { id: d.id, name: name || d.employeeId };
+    });
+  }, [rawDriversData]);
 
   const { data: shipmentsData } = useQuery({
     queryKey: ['shipments-list-all'],
@@ -207,11 +236,9 @@ export const TripsPage: React.FC = () => {
     setStatus('');
     setVehicleId('');
     setDriverId('');
+    setShipmentId('');
+    setRouteId('');
     setPage(1);
-  };
-
-  const handleRefresh = async () => {
-    await refetch();
   };
 
   const handlePageChange = (newPage: number) => {
@@ -220,135 +247,172 @@ export const TripsPage: React.FC = () => {
     }
   };
 
-  const isLoadingData = isLoading || isFetching;
+  const hasActiveFilters = Boolean(search || status || vehicleId || driverId || shipmentId || routeId);
+
+  if (isLoading) {
+    return <TripSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <TripErrorState
+        message={error instanceof Error ? error.message : 'Could not retrieve trip operational records.'}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        title="Trips"
-        description="Manage fleet operations, dispatches and transportation execution."
-        actions={
-          <Button onClick={handleCreateClick} className="flex items-center gap-2">
-            <Plus className="h-4.5 w-4.5" />
-            Create Trip
-          </Button>
-        }
+      {/* Header */}
+      <TripHeader
+        totalTrips={data?.total || 0}
+        onAddTrip={handleCreateClick}
+        onRefresh={() => void refetch()}
+        isRefreshing={isFetching}
+      />
+
+      {/* KPI Cards */}
+      <TripKPICards
+        data={kpiData}
+        activeStatusFilter={status}
+        onStatusFilterChange={(val) => {
+          setStatus(val);
+          setPage(1);
+        }}
       />
 
       {/* Notifications */}
       {successMessage && (
-        <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-600 dark:text-emerald-400 animate-scale-up">
-          <CheckCircle2 className="h-5 w-5 shrink-0" />
-          <span className="font-semibold">{successMessage}</span>
+        <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 className="h-4.5 w-4.5 shrink-0" />
+          <span>{successMessage}</span>
         </div>
       )}
 
       {errorMessage && (
-        <div className="flex items-center gap-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-600 dark:text-rose-400 animate-scale-up">
-          <AlertCircle className="h-5 w-5 shrink-0" />
-          <span className="font-semibold">{errorMessage}</span>
+        <div className="flex items-center gap-2.5 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-xs font-bold text-destructive">
+          <AlertCircle className="h-4.5 w-4.5 shrink-0" />
+          <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Toolbar Filters */}
+      {/* Toolbar */}
       <TripToolbar
         search={search}
-        onSearchChange={(val) => {
+        onSearchChange={(val: string) => {
           setSearch(val);
           setPage(1);
         }}
         status={status}
-        onStatusChange={(val) => {
+        onStatusChange={(val: string) => {
           setStatus(val);
           setPage(1);
         }}
         vehicleId={vehicleId}
-        onVehicleIdChange={(val) => {
+        onVehicleIdChange={(val: string) => {
           setVehicleId(val);
           setPage(1);
         }}
         driverId={driverId}
-        onDriverIdChange={(val) => {
+        onDriverIdChange={(val: string) => {
           setDriverId(val);
           setPage(1);
         }}
-        onRefresh={handleRefresh}
-        onClearFilters={handleClearFilters}
+        routeId={routeId}
+        onRouteIdChange={(val: string) => {
+          setRouteId(val);
+          setPage(1);
+        }}
         vehicles={vehiclesData || []}
         drivers={driversData || []}
-        isRefreshing={isFetching}
+        routes={(routesData || []).map((r) => ({ id: r.id, name: r.routeCode }))}
+        sortBy={sortBy}
+        onSortByChange={(val) => {
+          setSortBy(val);
+          setPage(1);
+        }}
+        sortOrder={sortOrder}
+        onSortOrderChange={(val) => setSortOrder(val)}
+        viewMode={viewMode}
+        onViewModeChange={(mode) => setViewMode(mode)}
+        onClearFilters={handleClearFilters}
       />
 
-      {/* Main Table Content */}
-      {isLoading && !data ? (
-        <TripSkeleton />
-      ) : error ? (
-        <ErrorState
-          title="Error loading trips"
-          description={error instanceof Error ? error.message : 'An unexpected error occurred while fetching trips data.'}
-          onRetry={handleRefresh}
-        />
-      ) : !data || data.items.length === 0 ? (
-        <EmptyState
-          title="No trips found"
-          description={
-            hasActiveFilters()
-              ? 'Try resetting the filters or modifying your search query to locate trips.'
-              : 'Add your first operational trip record to dispatch driver and vehicle assets.'
-          }
-          action={
-            !hasActiveFilters() ? (
-              <Button onClick={handleCreateClick} className="mt-2.5">
-                Create Trip
-              </Button>
-            ) : (
-              <Button variant="outline" onClick={handleClearFilters} className="mt-2.5">
-                Clear Filters
-              </Button>
-            )
-          }
+      {/* Main Content Area */}
+      {!data || data.items.length === 0 ? (
+        <TripEmptyState
+          hasFilters={hasActiveFilters}
+          onClearFilters={handleClearFilters}
+          onCreateTrip={handleCreateClick}
         />
       ) : (
         <div className="space-y-4">
-          <TripTable
-            trips={data.items}
-            onView={handleViewClick}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          />
+          {viewMode === 'table' ? (
+            <TripTable
+              trips={data.items}
+              onView={handleViewClick}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSort={handleSort}
+            />
+          ) : (
+            <TripCards
+              trips={data.items}
+              onView={handleViewClick}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+            />
+          )}
 
           {/* Pagination Controls */}
           {data.totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-xl shadow-sm">
+            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-2xl shadow-xs">
               <span className="text-xs font-semibold text-muted-foreground">
                 Showing Page <strong className="text-foreground">{data.page}</strong> of{' '}
                 <strong className="text-foreground">{data.totalPages}</strong> (
                 <strong className="text-foreground">{data.total}</strong> total trips)
               </span>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1 || isLoadingData}
-                  className="flex items-center gap-1"
+                  disabled={page === 1 || isFetching}
+                  className="h-8.5 px-3 text-xs"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4 mr-1" />
                   Previous
                 </Button>
+                <div className="flex items-center gap-1">
+                  {[...Array(data.totalPages)].map((_, idx) => {
+                    const pageNum = idx + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`h-8 w-8 rounded-lg text-xs font-semibold transition-colors ${
+                          page === pageNum
+                            ? 'bg-primary text-white font-bold'
+                            : 'bg-transparent text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handlePageChange(page + 1)}
-                  disabled={page === data.totalPages || isLoadingData}
-                  className="flex items-center gap-1"
+                  disabled={page === data.totalPages || isFetching}
+                  className="h-8.5 px-3 text-xs"
                 >
                   Next
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
             </div>
@@ -364,13 +428,13 @@ export const TripsPage: React.FC = () => {
         onSubmit={handleModalSubmit}
         loading={createMutation.isPending || updateMutation.isPending}
         shipments={shipmentsData || []}
-        vehicles={vehiclesData || []}
-        drivers={driversData || []}
+        vehicles={rawVehiclesData || []}
+        drivers={rawDriversData || []}
         routes={routesData || []}
       />
 
       {/* Details Side Drawer */}
-      <TripDetailsDrawer
+      <TripDrawer
         trip={selectedTrip}
         open={drawerOpen}
         onClose={() => {
@@ -383,9 +447,9 @@ export const TripsPage: React.FC = () => {
       <ConfirmDialog
         open={deleteDialogOpen}
         title="Confirm Trip Deletion"
-        description={`Are you absolutely sure you want to delete trip ${
+        description={`Are you sure you want to delete trip ${
           selectedTrip?.tripNumber || ''
-        }? This operational transaction record will be permanently deleted. This action is irreversible.`}
+        }? This action cannot be undone.`}
         confirmLabel="Delete Trip"
         cancelLabel="Keep Record"
         onConfirm={handleConfirmDelete}
@@ -398,9 +462,6 @@ export const TripsPage: React.FC = () => {
       />
     </div>
   );
-
-  function hasActiveFilters() {
-    return !!(search || status || vehicleId || driverId);
-  }
 };
+
 export default TripsPage;
