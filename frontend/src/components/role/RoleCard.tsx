@@ -1,6 +1,6 @@
 import React from 'react';
 import { ShieldCheck, Users, Lock, CheckCircle2, ChevronRight } from 'lucide-react';
-import type { RoleDetail } from '@/types/role';
+import type { RoleDetail, PermissionCategory } from '@/types/role';
 import { RoleBadge } from '@/components/user/RoleBadge';
 
 interface RoleCardProps {
@@ -9,9 +9,14 @@ interface RoleCardProps {
 }
 
 export const RoleCard: React.FC<RoleCardProps> = ({ role, onSelect }) => {
-  // Extract summary capabilities from permissions JSON
-  const categoriesWithAccess = Object.keys(role.permissions).filter(
-    (cat) => role.permissions[cat] && role.permissions[cat].length > 0
+  // Extract categories that have at least one granted action.
+  // role.permissions is guaranteed by the backend to be Record<string, string[]>
+  // so every value is always a string[] — .length is always valid.
+  const categoriesWithAccess = (Object.keys(role.permissions) as PermissionCategory[]).filter(
+    (cat) => {
+      const actions = role.permissions[cat];
+      return actions !== undefined && actions.length > 0;
+    }
   );
 
   return (
@@ -45,14 +50,17 @@ export const RoleCard: React.FC<RoleCardProps> = ({ role, onSelect }) => {
         </span>
 
         <div className="space-y-1.5 text-xs">
-          {categoriesWithAccess.slice(0, 3).map((cat) => (
-            <div key={cat} className="flex items-center gap-2 text-[#0b1c30]">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-              <span className="font-medium truncate">
-                {cat}: {role.permissions[cat].join(', ')}
-              </span>
-            </div>
-          ))}
+          {categoriesWithAccess.slice(0, 3).map((cat) => {
+            const actions = role.permissions[cat];
+            return (
+              <div key={cat} className="flex items-center gap-2 text-[#0b1c30]">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                <span className="font-medium truncate">
+                  {cat}: {actions!.join(', ')}
+                </span>
+              </div>
+            );
+          })}
 
           {categoriesWithAccess.length > 3 && (
             <p className="text-[11px] text-[#737686] font-medium pt-0.5">

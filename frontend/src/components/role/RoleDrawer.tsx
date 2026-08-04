@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck, Save, Lock, AlertCircle } from 'lucide-react';
 
-import type { RoleDetail } from '@/types/role';
+import type { RoleDetail, RolePermissions, PermissionCategory, PermissionAction } from '@/types/role';
 import { RoleBadge } from '@/components/user/RoleBadge';
 import { PermissionGroup } from './PermissionGroup';
 
 interface RoleDrawerProps {
   role: RoleDetail | null;
   isOpen: boolean;
-  categories: string[];
-  actions: string[];
+  categories: PermissionCategory[];
+  actions: PermissionAction[];
   onClose: () => void;
-  onSavePermissions: (roleId: string, permissions: Record<string, string[]>) => Promise<void>;
+  onSavePermissions: (roleId: string, permissions: RolePermissions) => Promise<void>;
 }
 
 export const RoleDrawer: React.FC<RoleDrawerProps> = ({
@@ -22,30 +22,26 @@ export const RoleDrawer: React.FC<RoleDrawerProps> = ({
   onClose,
   onSavePermissions,
 }) => {
-  const [permissionsState, setPermissionsState] = useState<Record<string, string[]>>({});
+  const [permissionsState, setPermissionsState] = useState<RolePermissions>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
     if (role) {
-      setPermissionsState(role.permissions || {});
+      setPermissionsState(role.permissions ?? {});
     }
   }, [role]);
 
   if (!isOpen || !role) return null;
 
-  const handleToggleAction = (category: string, action: string) => {
+  const handleToggleAction = (category: PermissionCategory, action: PermissionAction) => {
     if (role.name === 'Administrator') return; // Administrator role privileges are immutable
 
     setPermissionsState((prev) => {
-      const current = prev[category] || [];
-      let updated: string[];
-
-      if (current.includes(action)) {
-        updated = current.filter((a) => a !== action);
-      } else {
-        updated = [...current, action];
-      }
+      const current: PermissionAction[] = prev[category] ?? [];
+      const updated: PermissionAction[] = current.includes(action)
+        ? current.filter((a) => a !== action)
+        : [...current, action];
 
       return {
         ...prev,
@@ -134,8 +130,8 @@ export const RoleDrawer: React.FC<RoleDrawerProps> = ({
                     key={cat}
                     category={cat}
                     availableActions={actions}
-                    selectedActions={permissionsState[cat] || []}
-                    onToggleAction={(action) => handleToggleAction(cat, action)}
+                    selectedActions={permissionsState[cat] ?? []}
+                    onToggleAction={(action) => handleToggleAction(cat, action as PermissionAction)}
                     disabled={role.name === 'Administrator'}
                   />
                 ))}

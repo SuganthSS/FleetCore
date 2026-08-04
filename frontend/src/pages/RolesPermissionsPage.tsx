@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { roleService } from '@/services/role.service';
-import type { RoleDetail } from '@/types/role';
+import type { RoleDetail, PermissionCategory, PermissionAction, RolePermissions } from '@/types/role';
 import {
   RoleHeader,
   RoleToolbar,
@@ -14,7 +14,7 @@ import {
   RoleErrorState,
 } from '@/components/role';
 
-const DEFAULT_CATEGORIES = [
+const DEFAULT_CATEGORIES: PermissionCategory[] = [
   'Dashboard',
   'Users',
   'Vehicles',
@@ -34,7 +34,7 @@ const DEFAULT_CATEGORIES = [
   'Audit Logs',
 ];
 
-const DEFAULT_ACTIONS = ['View', 'Create', 'Edit', 'Delete', 'Export', 'Approve', 'Assign', 'Manage'];
+const DEFAULT_ACTIONS: PermissionAction[] = ['View', 'Create', 'Edit', 'Delete', 'Export', 'Approve', 'Assign', 'Manage'];
 
 export const RolesPermissionsPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -65,7 +65,7 @@ export const RolesPermissionsPage: React.FC = () => {
 
   // Mutation to update permissions
   const updatePermissionsMutation = useMutation({
-    mutationFn: ({ roleId, permissions }: { roleId: string; permissions: Record<string, string[]> }) =>
+    mutationFn: ({ roleId, permissions }: { roleId: string; permissions: RolePermissions }) =>
       roleService.updateRolePermissions(roleId, permissions),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
@@ -101,7 +101,7 @@ export const RolesPermissionsPage: React.FC = () => {
     setIsDrawerOpen(true);
   };
 
-  const handleSavePermissions = async (roleId: string, permissions: Record<string, string[]>) => {
+  const handleSavePermissions = async (roleId: string, permissions: RolePermissions) => {
     await updatePermissionsMutation.mutateAsync({ roleId, permissions });
   };
 
@@ -167,8 +167,8 @@ export const RolesPermissionsPage: React.FC = () => {
             const targetRole = roles.find((r) => r.id === roleId);
             if (!targetRole || targetRole.name === 'Administrator') return;
 
-            const current = targetRole.permissions[category] || [];
-            const updated = current.includes(action)
+            const current: PermissionAction[] = targetRole.permissions[category] ?? [];
+            const updated: PermissionAction[] = current.includes(action)
               ? current.filter((a) => a !== action)
               : [...current, action];
 

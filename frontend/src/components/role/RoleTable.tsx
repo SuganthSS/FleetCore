@@ -1,6 +1,6 @@
 import React from 'react';
 import { ShieldCheck, Users, Lock, ChevronRight } from 'lucide-react';
-import type { RoleDetail } from '@/types/role';
+import type { RoleDetail, PermissionCategory } from '@/types/role';
 import { RoleBadge } from '@/components/user/RoleBadge';
 
 interface RoleTableProps {
@@ -25,8 +25,11 @@ export const RoleTable: React.FC<RoleTableProps> = ({ roles, onSelectRole }) => 
           </thead>
           <tbody className="divide-y divide-[#e5eeff] text-xs text-[#0b1c30]">
             {roles.map((role) => {
-              const moduleCount = Object.keys(role.permissions).filter(
-                (k) => role.permissions[k] && role.permissions[k].length > 0
+              const moduleCount = (Object.keys(role.permissions) as PermissionCategory[]).filter(
+                (k) => {
+                  const actions = role.permissions[k];
+                  return actions !== undefined && actions.length > 0;
+                }
               ).length;
 
               return (

@@ -1,13 +1,13 @@
 import React from 'react';
 import { ShieldCheck } from 'lucide-react';
-import type { RoleDetail } from '@/types/role';
+import type { RoleDetail, PermissionCategory, PermissionAction } from '@/types/role';
 
 
 interface PermissionMatrixProps {
   roles: RoleDetail[];
-  categories: string[];
-  actions: string[];
-  onTogglePermission?: (roleId: string, category: string, action: string) => void;
+  categories: PermissionCategory[];
+  actions: PermissionAction[];
+  onTogglePermission?: (roleId: string, category: PermissionCategory, action: PermissionAction) => void;
   isEditable?: boolean;
 }
 
@@ -57,8 +57,8 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({
                 </td>
 
                 {roles.map((role) => {
-                  const grantedActions: string[] = role.permissions[category] || [];
-
+                  // Always a string[] — guaranteed by the backend normaliser
+                  const grantedActions: PermissionAction[] = role.permissions[category] ?? [];
 
                   return (
                     <td

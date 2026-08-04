@@ -1,11 +1,12 @@
 import { apiClient } from './api';
 import type { ApiResponse } from '@/types/api';
-import type { RoleDetail, PermissionMatrixResponse } from '@/types/role';
+import type { RoleDetail, RolePermissions, PermissionMatrixResponse } from '@/types/role';
 
 
 export const roleService = {
   /**
    * List all enterprise roles with user counts and capabilities.
+   * The backend normalises all permission shapes before returning.
    */
   getRoles: async (): Promise<ApiResponse<RoleDetail[]>> => {
     const { data } = await apiClient.get<ApiResponse<RoleDetail[]>>('/roles');
@@ -21,7 +22,7 @@ export const roleService = {
   },
 
   /**
-   * Get complete permission matrix definition.
+   * Get complete permission matrix definition (categories + actions + matrix).
    */
   getPermissionMatrix: async (): Promise<ApiResponse<PermissionMatrixResponse>> => {
     const { data } = await apiClient.get<ApiResponse<PermissionMatrixResponse>>('/roles/permissions');
@@ -30,10 +31,11 @@ export const roleService = {
 
   /**
    * Update permissions for a specific role.
+   * Only canonical PermissionCategory keys and PermissionAction values are accepted.
    */
   updateRolePermissions: async (
     id: string,
-    permissions: Record<string, string[]>
+    permissions: RolePermissions
   ): Promise<ApiResponse<RoleDetail>> => {
     const { data } = await apiClient.put<ApiResponse<RoleDetail>>(`/roles/${id}/permissions`, {
       permissions,
