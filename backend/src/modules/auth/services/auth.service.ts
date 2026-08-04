@@ -2,7 +2,7 @@ import { CompanyStatus, UserStatus } from '@prisma/client';
 import { prisma } from '../../../config/database';
 import { AuthenticatedUser, LoginRequest, LoginResponse, TokenPair } from '../interfaces/auth.interface';
 
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt.util';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.util';
 import { comparePassword } from '../utils/password.util';
 
 export class AuthService {
@@ -98,17 +98,71 @@ export class AuthService {
   }
 
   /**
-   * Placeholder for Refresh Token workflow (SPEC-026)
+   * Refreshes an access token using a valid refresh token.
+   *
+   * @param refreshToken Raw Refresh JWT string
+   * @returns TokenPair containing new accessToken and refreshToken
    */
-  async refreshToken(): Promise<TokenPair> {
-    throw new Error('Method not implemented: refreshToken');
+  async refreshToken(refreshToken: string): Promise<TokenPair> {
+    const verifyResult = verifyRefreshToken(refreshToken);
+
+    if (!verifyResult.success || !verifyResult.payload) {
+      if (verifyResult.error === 'EXPIRED') {
+        throw new Error('Refresh token expired');
+      }
+      throw new Error('Invalid refresh token');
+    }
+
+    const userId = verifyResult.payload.sub;
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        company: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error('User no longer exists');
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new Error('User account is not active');
+    }
+
+    if (user.company.status !== CompanyStatus.ACTIVE) {
+      throw new Error('Company account is not active');
+    }
+
+    const newAccessToken = generateAccessToken({
+      sub: user.id,
+      userId: user.id,
+      email: user.email,
+      role: user.role.name,
+      companyId: user.companyId,
+      roleId: user.roleId,
+      roleName: user.role.name,
+    });
+
+    const newRefreshToken = generateRefreshToken({
+      sub: user.id,
+    });
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      expiresIn: 86400,
+    };
   }
 
   /**
-   * Placeholder for Logout workflow (SPEC-026)
+   * Performs user logout.
+   * Note: FleetCore JWT tokens are stateless signatures without database persistence.
+   * Logout is completed by destroying client-stored tokens in localStorage/session memory.
    */
   async logout(): Promise<void> {
-    throw new Error('Method not implemented: logout');
+    // Stateless JWT logout completed by client clearing tokens
+    return Promise.resolve();
   }
 
   /**

@@ -59,7 +59,7 @@ export class AuthController {
     }
 
     try {
-      const tokenPair = await authService.refreshToken();
+      const tokenPair = await authService.refreshToken(parseResult.data.refreshToken);
       res.status(200).json({
         success: true,
         message: 'Token refreshed successfully',
