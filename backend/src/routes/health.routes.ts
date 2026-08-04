@@ -4,9 +4,10 @@ const router = Router();
 
 router.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
-    status: 'UP',
+    status: 'ok',
+    service: 'FleetCore Backend',
+    uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    service: 'FleetCore Backend Service',
   });
 });
 
