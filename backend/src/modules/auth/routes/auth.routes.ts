@@ -1,16 +1,17 @@
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
+import { authLimiter } from '../../../middlewares/rateLimit.middleware';
 
 const router = Router();
 
 /**
  * Public Authentication Endpoints
  */
-router.post('/login', (req, res) => authController.login(req, res));
-router.post('/refresh', (req, res) => authController.refreshToken(req, res));
-router.post('/forgot-password', (req, res) => authController.forgotPassword(req, res));
-router.post('/reset-password', (req, res) => authController.resetPassword(req, res));
+router.post('/login', authLimiter, (req, res) => authController.login(req, res));
+router.post('/refresh', authLimiter, (req, res) => authController.refreshToken(req, res));
+router.post('/forgot-password', authLimiter, (req, res) => authController.forgotPassword(req, res));
+router.post('/reset-password', authLimiter, (req, res) => authController.resetPassword(req, res));
 
 /**
  * Protected Authentication Endpoints (Requires valid Bearer access token)

@@ -1,11 +1,13 @@
 import express, { Application } from 'express';
 import http from 'http';
 import cors from 'cors';
+import helmet from 'helmet';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import { config } from './config/env';
 import { logger } from './utils/logger';
 import { errorHandler } from './middlewares/errorHandler';
+import { apiLimiter, aiLimiter } from './middlewares/rateLimit.middleware';
 import healthRoutes from './routes/health.routes';
 import { authRoutes } from './modules/auth';
 import { vehicleRoutes } from './modules/vehicle';
@@ -30,6 +32,17 @@ import { initSocket } from './socket';
 const app: Application = express();
 const server = http.createServer(app);
 
+// Trust Proxy for deployment platforms (e.g. Render, Heroku) to ensure rate limiting correctly reads client IP
+app.set('trust proxy', 1);
+
+// Security Headers via Helmet
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disabled to prevent blocking Swagger UI or frontend SPA assets
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allows cross-origin asset loading for Cloudinary images
+  })
+);
+
 // Middlewares
 app.use(cors());
 app.use(express.json());
@@ -48,8 +61,13 @@ const swaggerDocument = {
 };
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Routes
+// Health check route (Excluded from global API rate limiter)
 app.use('/api/v1', healthRoutes);
+
+// Apply Global API Rate Limiter to all feature endpoints
+app.use('/api/v1', apiLimiter);
+
+// Specific Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/vehicles', vehicleRoutes);
 app.use('/api/v1/drivers', driverRoutes);
@@ -66,7 +84,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/roles', roleRoutes);
 app.use('/api/v1/audit', auditRoutes);
 app.use('/api/v1/settings', settingsRoutes);
-app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/ai', aiLimiter, aiRoutes);
 app.use('/api/v1/search', searchRoutes);
 
 
