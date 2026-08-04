@@ -7,7 +7,7 @@ import React, {
 import type { AuthUser, LoginRequest } from '@/types/auth';
 import { authService } from '@/services/auth.service';
 import { AuthContext } from './AuthContext';
-import { queryClient } from './AppProviders';
+import { queryClient } from '@/lib/queryClient';
 
 export interface AuthContextValue {
   user: AuthUser | null;
