@@ -48,7 +48,6 @@ export const UserToolbar: React.FC<UserToolbarProps> = ({
               <option value="Administrator">Administrator</option>
               <option value="Fleet Manager">Fleet Manager</option>
               <option value="Dispatcher">Dispatcher</option>
-              <option value="Maintenance Manager">Maintenance Manager</option>
               <option value="Accountant">Accountant</option>
               <option value="Driver">Driver</option>
             </select>

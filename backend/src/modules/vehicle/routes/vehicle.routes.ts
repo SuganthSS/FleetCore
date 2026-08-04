@@ -17,40 +17,40 @@ router.use(authenticate);
  */
 router.get(
   '/',
-  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => vehicleController.getVehicles(req, res)
 );
 
 /**
  * GET /api/v1/vehicles/:id
  * Retrieve single vehicle profile by UUID.
- * Roles: Administrator, Fleet Manager, Maintenance Manager
+ * Roles: Administrator, Fleet Manager
  */
 router.get(
   '/:id',
-  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => vehicleController.getVehicle(req, res)
 );
 
 /**
  * POST /api/v1/vehicles
  * Create a new vehicle record.
- * Roles: Administrator, Fleet Manager, Maintenance Manager
+ * Roles: Administrator, Fleet Manager
  */
 router.post(
   '/',
-  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => vehicleController.createVehicle(req, res)
 );
 
 /**
  * PUT /api/v1/vehicles/:id
  * Update an existing vehicle record by UUID.
- * Roles: Administrator, Fleet Manager, Maintenance Manager
+ * Roles: Administrator, Fleet Manager
  */
 router.put(
   '/:id',
-  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => vehicleController.updateVehicle(req, res)
 );
 

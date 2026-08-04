@@ -77,7 +77,6 @@ export const UsersPage: React.FC = () => {
     { id: 'admin-id', name: 'Administrator' },
     { id: 'fm-id', name: 'Fleet Manager' },
     { id: 'disp-id', name: 'Dispatcher' },
-    { id: 'mm-id', name: 'Maintenance Manager' },
     { id: 'acc-id', name: 'Accountant' },
     { id: 'driver-id', name: 'Driver' },
   ];

@@ -17,18 +17,18 @@ router.use(authenticate);
  */
 router.get(
   '/',
-  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Maintenance Manager', 'Accountant', 'Driver'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Accountant', 'Driver'),
   (req, res) => notificationController.getNotifications(req, res)
 );
 
 /**
  * GET /api/v1/notifications/:id
  * Retrieve single notification history entry by UUID.
- * Roles: Administrator, Fleet Manager, Dispatcher, Maintenance Manager, Accountant, Driver
+ * Roles: Administrator, Fleet Manager, Dispatcher, Accountant, Driver
  */
 router.get(
   '/:id',
-  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Maintenance Manager', 'Accountant', 'Driver'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Accountant', 'Driver'),
   (req, res) => notificationController.getNotification(req, res)
 );
 

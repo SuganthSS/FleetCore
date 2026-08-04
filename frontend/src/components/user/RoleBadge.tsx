@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Truck, Compass, Wrench, DollarSign, User } from 'lucide-react';
+import { Shield, Truck, Compass, DollarSign, User } from 'lucide-react';
 import type { UserRoleName } from '@/types/user';
 
 interface RoleBadgeProps {
@@ -24,11 +24,6 @@ export const RoleBadge: React.FC<RoleBadgeProps> = ({ roleName, size = 'md' }) =
         return {
           bg: 'bg-purple-50 text-purple-700 border-purple-200',
           icon: Compass,
-        };
-      case 'Maintenance Manager':
-        return {
-          bg: 'bg-amber-50 text-amber-800 border-amber-200',
-          icon: Wrench,
         };
       case 'Accountant':
         return {

@@ -32,7 +32,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities }) =>
     {
       id: '3',
       action: 'Logged maintenance work order #WO-998',
-      user: 'Maintenance Manager Miller',
+      user: 'Fleet Manager Miller',
       timestamp: '1 hour ago',
       type: 'maintenance',
     },

@@ -17,7 +17,7 @@ router.use(authenticate);
  */
 router.get(
   '/',
-  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Maintenance Manager', 'Accountant'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Accountant'),
   (req, res) => dashboardController.getDashboardOverview(req, res)
 );
 

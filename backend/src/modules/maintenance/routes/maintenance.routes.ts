@@ -17,51 +17,51 @@ router.use(authenticate);
  */
 router.get(
   '/',
-  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => maintenanceController.getMaintenances(req, res)
 );
 
 /**
  * GET /api/v1/maintenance/:id
  * Retrieve single maintenance work order by UUID.
- * Roles: Administrator, Fleet Manager, Maintenance Manager
+ * Roles: Administrator, Fleet Manager
  */
 router.get(
   '/:id',
-  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => maintenanceController.getMaintenance(req, res)
 );
 
 /**
  * POST /api/v1/maintenance
  * Create a new maintenance work order.
- * Roles: Administrator, Fleet Manager, Maintenance Manager
+ * Roles: Administrator, Fleet Manager
  */
 router.post(
   '/',
-  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => maintenanceController.createMaintenance(req, res)
 );
 
 /**
  * PUT /api/v1/maintenance/:id
  * Update an existing maintenance work order by UUID.
- * Roles: Administrator, Fleet Manager, Maintenance Manager
+ * Roles: Administrator, Fleet Manager
  */
 router.put(
   '/:id',
-  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => maintenanceController.updateMaintenance(req, res)
 );
 
 /**
  * DELETE /api/v1/maintenance/:id
  * Delete a maintenance work order by UUID.
- * Roles: Administrator, Fleet Manager, Maintenance Manager
+ * Roles: Administrator, Fleet Manager
  */
 router.delete(
   '/:id',
-  authorize('Administrator', 'Fleet Manager', 'Maintenance Manager'),
+  authorize('Administrator', 'Fleet Manager'),
   (req, res) => maintenanceController.deleteMaintenance(req, res)
 );
 

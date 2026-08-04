@@ -4,7 +4,6 @@ export type UserRoleName =
   | 'Administrator'
   | 'Fleet Manager'
   | 'Dispatcher'
-  | 'Maintenance Manager'
   | 'Accountant'
   | 'Driver';
 

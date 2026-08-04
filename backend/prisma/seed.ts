@@ -16,26 +16,76 @@ async function main() {
   });
   console.log('✅ SystemHealthAnchor seeded:', healthAnchor.id);
 
-  // 2. Seed Default Roles
+  // 2. Migrate legacy user-role assignments before cleanup
+  const adminRole = await prisma.role.findFirst({ where: { name: 'Administrator' } });
+  const fleetManagerRole = await prisma.role.findFirst({ where: { name: 'Fleet Manager' } });
+
+  const legacyAdminRoles = await prisma.role.findMany({
+    where: { name: { in: ['Super Admin', 'Company Admin'] } },
+  });
+  const maintenanceManagerRole = await prisma.role.findFirst({ where: { name: 'Maintenance Manager' } });
+
+  if (adminRole && legacyAdminRoles.length > 0) {
+    const legacyAdminIds = legacyAdminRoles.map((r) => r.id);
+    await prisma.user.updateMany({
+      where: { roleId: { in: legacyAdminIds } },
+      data: { roleId: adminRole.id },
+    });
+    console.log('✅ Migrated Super Admin and Company Admin users to Administrator role');
+  }
+
+  if (fleetManagerRole && maintenanceManagerRole) {
+    await prisma.user.updateMany({
+      where: { roleId: maintenanceManagerRole.id },
+      data: { roleId: fleetManagerRole.id },
+    });
+    console.log('✅ Migrated Maintenance Manager users to Fleet Manager role');
+  }
+
+  // Delete legacy roles completely from DB
+  await prisma.role.deleteMany({
+    where: { name: { in: ['Super Admin', 'Company Admin', 'Maintenance Manager'] } },
+  });
+  console.log('✅ Removed legacy roles from database');
+
+  // 3. Seed Simplified 5 Default Roles
   const defaultRoles = [
     {
       name: 'Administrator',
       description: 'Platform administrator with full unrestricted access to system configuration, user management, and organizational resources.',
       isSystem: true,
-      permissions: { all: true, scope: '*' },
+      permissions: {
+        Dashboard: ['Manage'],
+        Users: ['Manage'],
+        Vehicles: ['Manage'],
+        Drivers: ['Manage'],
+        Trips: ['Manage'],
+        Routes: ['Manage'],
+        Shipments: ['Manage'],
+        Fuel: ['Manage'],
+        Maintenance: ['Manage'],
+        Tracking: ['Manage'],
+        Notifications: ['Manage'],
+        Reports: ['Manage'],
+        Analytics: ['Manage'],
+        AI: ['Manage'],
+        Settings: ['Manage'],
+        Documents: ['Manage'],
+        'Audit Logs': ['Manage'],
+      },
     },
     {
       name: 'Fleet Manager',
-      description: 'Fleet operations manager managing vehicles, drivers, fuel, maintenance, tracking, and operational analytics.',
+      description: 'Fleet operations & maintenance manager managing vehicles, drivers, fuel, maintenance work orders, tracking, and operational analytics.',
       isSystem: true,
       permissions: {
-        vehicles: ['read', 'write', 'delete'],
-        drivers: ['read', 'write', 'delete'],
-        fuel: ['read', 'write', 'delete'],
-        maintenance: ['read', 'write', 'delete'],
-        tracking: ['read', 'write'],
-        reports: ['read', 'export'],
-        analytics: ['read'],
+        Vehicles: ['View', 'Create', 'Edit', 'Delete'],
+        Drivers: ['View', 'Create', 'Edit', 'Delete'],
+        Fuel: ['View', 'Create', 'Edit', 'Delete'],
+        Maintenance: ['View', 'Create', 'Edit', 'Delete'],
+        Tracking: ['View', 'Create', 'Edit'],
+        Reports: ['View', 'Export'],
+        Analytics: ['View'],
       },
     },
     {
@@ -43,20 +93,11 @@ async function main() {
       description: 'Operational dispatcher managing trips, routes, shipments, tracking, and notifications.',
       isSystem: true,
       permissions: {
-        trips: ['read', 'write', 'delete'],
-        routes: ['read', 'write', 'delete'],
-        shipments: ['read', 'write', 'delete'],
-        tracking: ['read', 'write'],
-        notifications: ['read', 'write'],
-      },
-    },
-    {
-      name: 'Maintenance Manager',
-      description: 'Maintenance supervisor managing maintenance work orders and vehicle service records.',
-      isSystem: true,
-      permissions: {
-        maintenance: ['read', 'write', 'delete'],
-        vehicles: ['read', 'write'],
+        Trips: ['View', 'Create', 'Edit', 'Delete'],
+        Routes: ['View', 'Create', 'Edit', 'Delete'],
+        Shipments: ['View', 'Create', 'Edit', 'Delete'],
+        Tracking: ['View', 'Create', 'Edit'],
+        Notifications: ['View', 'Create', 'Edit'],
       },
     },
     {
@@ -64,9 +105,9 @@ async function main() {
       description: 'Financial officer managing fuel logs, financial reports, and cost analytics.',
       isSystem: true,
       permissions: {
-        fuel: ['read', 'write', 'delete'],
-        reports: ['read', 'export'],
-        analytics: ['read'],
+        Fuel: ['View', 'Create', 'Edit', 'Delete'],
+        Reports: ['View', 'Export'],
+        Analytics: ['View'],
       },
     },
     {
@@ -74,10 +115,10 @@ async function main() {
       description: 'Operational driver executing assigned trips, logging fuel events, and updating live location.',
       isSystem: true,
       permissions: {
-        trips: ['read', 'update_status'],
-        fuel: ['write'],
-        tracking: ['write'],
-        profile: ['read', 'write'],
+        Trips: ['View', 'Edit'],
+        Fuel: ['Create'],
+        Tracking: ['Create', 'Edit'],
+        Settings: ['View', 'Edit'],
       },
     },
   ];
@@ -97,7 +138,7 @@ async function main() {
   }
   console.log(`✅ Roles seeded: ${Object.keys(seededRoles).length}`);
 
-  // 3. Seed Default Demo Company
+  // 4. Seed Default Demo Company
   const defaultCompany = await prisma.company.upsert({
     where: { registrationNumber: 'DEMO-FC-2026' },
     update: {
@@ -130,7 +171,7 @@ async function main() {
   });
   console.log(`✅ Company seeded: ${defaultCompany.name}`);
 
-  // 4. Seed Staff Users
+  // 5. Seed Staff Users
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash('Admin@FleetCore2026!', salt);
 
@@ -167,7 +208,7 @@ async function main() {
       lastName: 'Miller',
       email: 'maintenance@fleetcore.demo',
       phone: '+1-800-555-0103',
-      roleName: 'Maintenance Manager',
+      roleName: 'Fleet Manager',
       department: 'Maintenance & Service',
       designation: 'Maintenance Supervisor',
     },
@@ -211,7 +252,7 @@ async function main() {
     console.log(`✅ Staff User seeded (${staff.roleName}): ${user.email}`);
   }
 
-  // 5. Seed Drivers and associated Users
+  // 6. Seed Drivers and associated Users
   const driverRole = seededRoles['Driver'];
   const driverData = [
     {
@@ -308,7 +349,7 @@ async function main() {
   }
   console.log(`✅ Drivers seeded: ${seededDrivers.length}`);
 
-  // 6. Seed Vehicles
+  // 7. Seed Vehicles
   const vehicleData = [
     {
       registrationNumber: 'TX-FL-100',
@@ -373,7 +414,7 @@ async function main() {
   }
   console.log(`✅ Vehicles seeded: ${seededVehicles.length}`);
 
-  // 7. Seed Customers
+  // 8. Seed Customers
   const customerData = [
     {
       customerCode: 'CUST-ACME',
@@ -446,7 +487,7 @@ async function main() {
   }
   console.log(`✅ Customers seeded: ${seededCustomers.length}`);
 
-  // 8. Seed Shipments & 9. Seed Routes
+  // 9. Seed Shipments & Routes
   const shipmentData = [
     {
       shipmentNumber: 'SHP-1001',
@@ -772,7 +813,6 @@ async function main() {
   console.log(`✅ Vehicle Location History seeded: ${seededHistories.length}`);
 
   // 14. Seed Notifications
-  const seededNotifications = [];
   const adminUser = await prisma.user.findFirstOrThrow({ where: { email: 'admin@fleetcore.demo' } });
   const adminId = adminUser.id;
   const user1 = seededDriverUsers[0];
@@ -787,7 +827,7 @@ async function main() {
 
   for (let i = 0; i < notificationData.length; i++) {
     const item = notificationData[i];
-    const notif = await prisma.notification.create({
+    await prisma.notification.create({
       data: {
         title: item.title,
         message: item.message,
@@ -798,16 +838,15 @@ async function main() {
         userId: item.userId,
       },
     });
-    seededNotifications.push(notif);
   }
-  console.log(`✅ Notifications seeded: ${seededNotifications.length}`);
+  console.log(`✅ Notifications seeded`);
 
-  console.log('🎉 Production database seeding completed successfully!');
+  console.log('🚀 FleetCore Database Seeding Completed Successfully!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error seeding database:', e);
+    console.error('❌ Seeding error:', e);
     process.exit(1);
   })
   .finally(async () => {
