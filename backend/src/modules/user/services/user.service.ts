@@ -52,12 +52,21 @@ export class UserService {
    * Creates a new user record after verifying constraints.
    */
   async createUser(input: CreateUserInput): Promise<any> {
-    // 1. Verify company exists
-    const company = await prisma.company.findUnique({
-      where: { id: input.companyId },
-    });
-    if (!company) {
-      throw new Error(`Company with ID '${input.companyId}' does not exist.`);
+    // 1. Verify company exists (or fallback to primary default company)
+    let companyId = input.companyId;
+    if (!companyId) {
+      const defaultCompany = await prisma.company.findFirst();
+      if (!defaultCompany) {
+        throw new Error('No system company exists to assign user.');
+      }
+      companyId = defaultCompany.id;
+    } else {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+      });
+      if (!company) {
+        throw new Error(`Company with ID '${companyId}' does not exist.`);
+      }
     }
 
     // 2. Verify role exists
@@ -87,7 +96,7 @@ export class UserService {
         email: input.email.toLowerCase().trim(),
         phone: input.phone || null,
         passwordHash,
-        companyId: input.companyId,
+        companyId,
         roleId: input.roleId,
         status: input.status,
         department: input.department || null,

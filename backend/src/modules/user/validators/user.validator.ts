@@ -31,8 +31,10 @@ export const createUserSchema = z.object({
     .min(6, { message: 'Password must be at least 6 characters' }),
 
   companyId: z
-    .string({ required_error: 'Company ID is required' })
-    .uuid({ message: 'Invalid Company ID UUID format' }),
+    .preprocess(
+      (val) => (val === '' ? undefined : val),
+      z.string({ required_error: 'Company ID is required' }).uuid({ message: 'Invalid Company ID UUID format' }).optional()
+    ),
 
   roleId: z
     .string({ required_error: 'Role ID is required' })
@@ -89,14 +91,10 @@ export const userQuerySchema = z.object({
   search: z.string().trim().optional(),
 
   companyId: z
-    .string()
-    .uuid({ message: 'Invalid Company ID UUID format' })
-    .optional(),
+    .preprocess((val) => (val === '' ? undefined : val), z.string().uuid({ message: 'Invalid Company ID UUID format' }).optional()),
 
   roleId: z
-    .string()
-    .uuid({ message: 'Invalid Role ID UUID format' })
-    .optional(),
+    .preprocess((val) => (val === '' ? undefined : val), z.string().uuid({ message: 'Invalid Role ID UUID format' }).optional()),
 
   status: z
     .nativeEnum(UserStatus, {
