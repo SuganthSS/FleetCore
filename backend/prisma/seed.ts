@@ -171,89 +171,137 @@ async function main() {
   });
   console.log(`✅ Company seeded: ${defaultCompany.name}`);
 
-  // 5. Seed Staff Users
+  // 5. Seed Canonical Users
   const salt = await bcrypt.genSalt(10);
-  const passwordHash = await bcrypt.hash('Admin@FleetCore2026!', salt);
+  const adminPasswordHash = await bcrypt.hash('Admin@123', salt);
+  const fleetPasswordHash = await bcrypt.hash('Fleet@123', salt);
+  const dispatchPasswordHash = await bcrypt.hash('Dispatch@123', salt);
+  const driverPasswordHash = await bcrypt.hash('Driver@123', salt);
+  const accountPasswordHash = await bcrypt.hash('Account@123', salt);
 
-  const staffUsersData = [
+  const canonicalUsersData = [
     {
-      firstName: 'FleetCore',
+      firstName: 'Fleet',
       lastName: 'Administrator',
-      email: 'admin@fleetcore.demo',
-      phone: '+1-800-555-0100',
+      email: 'admin@fleetcore.com',
+      passwordHash: adminPasswordHash,
       roleName: 'Administrator',
       department: 'Executive Administration',
       designation: 'System Administrator',
     },
     {
-      firstName: 'Marcus',
-      lastName: 'Vance',
-      email: 'fleet.manager@fleetcore.demo',
-      phone: '+1-800-555-0101',
+      firstName: 'Fleet',
+      lastName: 'Manager',
+      email: 'fleetmanager@fleetcore.com',
+      passwordHash: fleetPasswordHash,
       roleName: 'Fleet Manager',
       department: 'Fleet Operations',
       designation: 'Fleet Operations Manager',
     },
     {
-      firstName: 'Sarah',
-      lastName: 'Conner',
-      email: 'dispatcher@fleetcore.demo',
-      phone: '+1-800-555-0102',
+      firstName: 'Dispatcher',
+      lastName: 'User',
+      email: 'dispatcher@fleetcore.com',
+      passwordHash: dispatchPasswordHash,
       roleName: 'Dispatcher',
       department: 'Logistics & Dispatch',
       designation: 'Head Dispatcher',
     },
     {
-      firstName: 'David',
-      lastName: 'Miller',
-      email: 'maintenance@fleetcore.demo',
-      phone: '+1-800-555-0103',
-      roleName: 'Fleet Manager',
-      department: 'Maintenance & Service',
-      designation: 'Maintenance Supervisor',
+      firstName: 'Fleet',
+      lastName: 'Driver',
+      email: 'driver@fleetcore.com',
+      passwordHash: driverPasswordHash,
+      roleName: 'Driver',
+      department: 'Operations',
+      designation: 'Professional Driver',
     },
     {
-      firstName: 'Elena',
-      lastName: 'Rostova',
-      email: 'accountant@fleetcore.demo',
-      phone: '+1-800-555-0104',
+      firstName: 'Fleet',
+      lastName: 'Accountant',
+      email: 'accountant@fleetcore.com',
+      passwordHash: accountPasswordHash,
       roleName: 'Accountant',
       department: 'Finance & Accounting',
       designation: 'Senior Fleet Accountant',
     },
   ];
 
-  for (const staff of staffUsersData) {
+  const canonicalEmails = canonicalUsersData.map(u => u.email);
+  const seededUsers: Record<string, any> = {};
+
+  for (const staff of canonicalUsersData) {
     const user = await prisma.user.upsert({
       where: { email: staff.email },
       update: {
         firstName: staff.firstName,
         lastName: staff.lastName,
-        passwordHash,
+        passwordHash: staff.passwordHash,
         companyId: defaultCompany.id,
         roleId: seededRoles[staff.roleName],
         department: staff.department,
         designation: staff.designation,
         emailVerified: true,
+        status: 'ACTIVE',
+        phone: '+1-800-555-0100',
+        avatarUrl: 'https://fleetcore.demo/assets/avatar-placeholder.png',
       },
       create: {
         firstName: staff.firstName,
         lastName: staff.lastName,
         email: staff.email,
-        phone: staff.phone,
-        passwordHash,
+        phone: '+1-800-555-0100',
+        passwordHash: staff.passwordHash,
         companyId: defaultCompany.id,
         roleId: seededRoles[staff.roleName],
         department: staff.department,
         designation: staff.designation,
         emailVerified: true,
+        status: 'ACTIVE',
+        avatarUrl: 'https://fleetcore.demo/assets/avatar-placeholder.png',
       },
     });
-    console.log(`✅ Staff User seeded (${staff.roleName}): ${user.email}`);
+    seededUsers[staff.roleName] = user;
+    console.log(`✅ Canonical User seeded (${staff.roleName}): ${user.email}`);
   }
 
-  // 6. Seed Drivers and associated Users
-  const driverRole = seededRoles['Driver'];
+  const adminUserId = seededUsers['Administrator'].id;
+  const canonicalDriverId = seededUsers['Driver'].id;
+
+  // Migrate foreign keys referencing existing non-canonical users
+  const legacyUsers = await prisma.user.findMany({
+    where: { email: { notIn: canonicalEmails } }
+  });
+  
+  if (legacyUsers.length > 0) {
+    const legacyUserIds = legacyUsers.map(u => u.id);
+    
+    // Migrate notifications to Admin
+    await prisma.notification.updateMany({
+      where: { userId: { in: legacyUserIds } },
+      data: { userId: adminUserId },
+    });
+    
+    // Set Driver userIds to NULL
+    await prisma.driver.updateMany({
+      where: { userId: { in: legacyUserIds } },
+      data: { userId: null },
+    });
+
+    // Migrate Audit Logs to Admin
+    await prisma.auditLog.updateMany({
+      where: { userId: { in: legacyUserIds } },
+      data: { userId: adminUserId },
+    });
+    
+    // Delete the legacy users
+    const deleteResult = await prisma.user.deleteMany({
+      where: { id: { in: legacyUserIds } },
+    });
+    console.log(`✅ Deleted ${deleteResult.count} legacy users.`);
+  }
+
+  // 6. Seed Drivers
   const driverData = [
     {
       firstName: 'John',
@@ -288,37 +336,10 @@ async function main() {
   ];
 
   const seededDrivers = [];
-  const seededDriverUsers = [];
 
-  for (const item of driverData) {
-    const user = await prisma.user.upsert({
-      where: { email: item.email },
-      update: {
-        firstName: item.firstName,
-        lastName: item.lastName,
-        phone: item.phone,
-        passwordHash,
-        companyId: defaultCompany.id,
-        roleId: driverRole,
-        department: 'Operations',
-        designation: 'Professional Driver',
-        emailVerified: true,
-      },
-      create: {
-        firstName: item.firstName,
-        lastName: item.lastName,
-        email: item.email,
-        phone: item.phone,
-        passwordHash,
-        companyId: defaultCompany.id,
-        roleId: driverRole,
-        department: 'Operations',
-        designation: 'Professional Driver',
-        emailVerified: true,
-      },
-    });
-
-    seededDriverUsers.push(user);
+  for (let i = 0; i < driverData.length; i++) {
+    const item = driverData[i];
+    const driverUserId = i === 0 ? canonicalDriverId : null;
 
     const driver = await prisma.driver.upsert({
       where: { employeeId: item.employeeId },
@@ -330,6 +351,7 @@ async function main() {
         joiningDate: new Date('2025-01-01'),
         emergencyContactName: 'Emergency Contact',
         emergencyContactPhone: '+1-555-9999',
+        userId: driverUserId,
       },
       create: {
         employeeId: item.employeeId,
@@ -340,7 +362,7 @@ async function main() {
         joiningDate: new Date('2025-01-01'),
         emergencyContactName: 'Emergency Contact',
         emergencyContactPhone: '+1-555-9999',
-        userId: user.id,
+        userId: driverUserId,
         companyId: defaultCompany.id,
       },
     });
@@ -813,14 +835,14 @@ async function main() {
   console.log(`✅ Vehicle Location History seeded: ${seededHistories.length}`);
 
   // 14. Seed Notifications
-  const adminUser = await prisma.user.findFirstOrThrow({ where: { email: 'admin@fleetcore.demo' } });
+  const adminUser = await prisma.user.findFirstOrThrow({ where: { email: 'admin@fleetcore.com' } });
   const adminId = adminUser.id;
-  const user1 = seededDriverUsers[0];
+  const canonicalDriver = await prisma.user.findFirstOrThrow({ where: { email: 'driver@fleetcore.com' } });
 
   const notificationData = [
     { title: 'Trip Dispatched', message: 'Trip TRP-9001 has been dispatched to John Doe.', userId: adminId },
     { title: 'Fuel Threshold Alert', message: 'Vehicle TX-FL-100 recorded unusually high fuel consumption.', userId: adminId },
-    { title: 'New Trip Assigned', message: 'You have been assigned to trip TRP-9001.', userId: user1.id },
+    { title: 'New Trip Assigned', message: 'You have been assigned to trip TRP-9001.', userId: canonicalDriver.id },
     { title: 'Maintenance Overdue Alert', message: 'Vehicle TX-FL-300 inspection is due in 3 days.', userId: adminId },
     { title: 'System Notice', message: 'System maintenance scheduled for Sunday at 02:00 UTC.', userId: adminId },
   ];

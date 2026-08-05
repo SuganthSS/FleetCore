@@ -98,7 +98,7 @@ export class SearchController {
         ...drivers.map((d) => ({
           id: d.id,
           category: 'Drivers',
-          title: `${d.user.firstName} ${d.user.lastName}`,
+          title: d.user ? `${d.user.firstName} ${d.user.lastName}` : `Driver ${d.employeeId}`,
           subtitle: `License: ${d.licenseNumber} | Availability: ${d.availability}`,
           url: `/drivers/${d.id}`,
         })),

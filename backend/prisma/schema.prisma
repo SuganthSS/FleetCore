@@ -298,7 +298,7 @@ model Driver {
   /// Emergency contact person phone number
   emergencyContactPhone String?
   /// Foreign key referencing associated User account
-  userId                String             @unique
+  userId                String?             @unique
   /// Foreign key referencing parent Company
   companyId             String
   /// Creation timestamp
@@ -307,7 +307,7 @@ model Driver {
   updatedAt             DateTime           @updatedAt
 
   /// Associated User account relation
-  user               User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User?                    @relation(fields: [userId], references: [id], onDelete: SetNull)
   /// Parent Company relation
   company            Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   trips              Trip[]

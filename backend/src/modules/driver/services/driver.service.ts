@@ -339,15 +339,17 @@ export class DriverService {
         }
       }
 
-      await prisma.user.update({
-        where: { id: existingDriver.userId },
-        data: {
-          firstName: firstName !== undefined ? firstName : undefined,
-          lastName: lastName !== undefined ? lastName : undefined,
-          email: email !== undefined ? email : undefined,
-          phone: phone !== undefined ? phone : undefined,
-        },
-      });
+      if (existingDriver.userId) {
+        await prisma.user.update({
+          where: { id: existingDriver.userId },
+          data: {
+            firstName: firstName !== undefined ? firstName : undefined,
+            lastName: lastName !== undefined ? lastName : undefined,
+            email: email !== undefined ? email : undefined,
+            phone: phone !== undefined ? phone : undefined,
+          },
+        });
+      }
     }
 
     const updatedDriver = await prisma.driver.update({
