@@ -15,6 +15,14 @@ import { FleetManagerTripsPage } from '@/pages/fleet-manager/FleetManagerTripsPa
 import { FleetManagerFuelPage } from '@/pages/fleet-manager/FleetManagerFuelPage';
 import { FleetManagerMaintenancePage } from '@/pages/fleet-manager/FleetManagerMaintenancePage';
 import { FleetManagerTrackingPage } from '@/pages/fleet-manager/FleetManagerTrackingPage';
+import { FleetManagerAnalyticsPage } from '@/pages/fleet-manager/FleetManagerAnalyticsPage';
+import { FleetManagerReportsPage } from '@/pages/fleet-manager/FleetManagerReportsPage';
+import { FleetManagerAIPage } from '@/pages/fleet-manager/FleetManagerAIPage';
+import { FleetManagerNotificationsPage } from '@/pages/fleet-manager/FleetManagerNotificationsPage';
+import { FleetManagerDocumentsPage } from '@/pages/fleet-manager/FleetManagerDocumentsPage';
+import { FleetManagerProfilePage } from '@/pages/fleet-manager/FleetManagerProfilePage';
+import { FleetManagerSearchPage } from '@/pages/fleet-manager/FleetManagerSearchPage';
+
 import { VehiclesPage } from '@/pages/VehiclesPage';
 import { VehicleDetailsPage } from '@/pages/VehicleDetailsPage';
 import { DriversPage } from '@/pages/DriversPage';
@@ -136,13 +144,13 @@ const router = createBrowserRouter([
           { path: '/fleet-manager/fuel', element: <FleetManagerFuelPage /> },
           { path: '/fleet-manager/maintenance', element: <FleetManagerMaintenancePage /> },
           { path: '/fleet-manager/tracking', element: <FleetManagerTrackingPage /> },
-          { path: '/fleet-manager/notifications', element: <NotificationCenterPage /> },
-          { path: '/fleet-manager/documents', element: <DocumentLibraryPage /> },
-          { path: '/fleet-manager/profile', element: <MyProfilePage /> },
-          { path: '/fleet-manager/search', element: <GlobalSearchPage /> },
-          { path: '/fleet-manager/analytics', element: <AnalyticsPage /> },
-          { path: '/fleet-manager/ai-insights', element: <AIInsightsPage /> },
-          { path: '/fleet-manager/reports', element: <ReportsPage /> },
+          { path: '/fleet-manager/analytics', element: <FleetManagerAnalyticsPage /> },
+          { path: '/fleet-manager/reports', element: <FleetManagerReportsPage /> },
+          { path: '/fleet-manager/ai', element: <FleetManagerAIPage /> },
+          { path: '/fleet-manager/notifications', element: <FleetManagerNotificationsPage /> },
+          { path: '/fleet-manager/documents', element: <FleetManagerDocumentsPage /> },
+          { path: '/fleet-manager/profile', element: <FleetManagerProfilePage /> },
+          { path: '/fleet-manager/search', element: <FleetManagerSearchPage /> },
           { path: '/fleet-manager/settings', element: <SettingsPage /> },
         ],
       },
