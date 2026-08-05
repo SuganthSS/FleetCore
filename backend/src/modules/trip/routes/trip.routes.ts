@@ -17,51 +17,51 @@ router.use(authenticate);
  */
 router.get(
   '/',
-  authorize('Administrator', 'Dispatcher', 'Driver'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Driver'),
   (req, res) => tripController.getTrips(req, res)
 );
 
 /**
  * GET /api/v1/trips/:id
  * Retrieve single trip by UUID.
- * Roles: Administrator, Dispatcher, Driver
+ * Roles: Administrator, Fleet Manager, Dispatcher, Driver
  */
 router.get(
   '/:id',
-  authorize('Administrator', 'Dispatcher', 'Driver'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Driver'),
   (req, res) => tripController.getTrip(req, res)
 );
 
 /**
  * POST /api/v1/trips
  * Create a new trip execution.
- * Roles: Administrator, Dispatcher
+ * Roles: Administrator, Fleet Manager, Dispatcher
  */
 router.post(
   '/',
-  authorize('Administrator', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher'),
   (req, res) => tripController.createTrip(req, res)
 );
 
 /**
  * PUT /api/v1/trips/:id
  * Update an existing trip execution by UUID.
- * Roles: Administrator, Dispatcher, Driver
+ * Roles: Administrator, Fleet Manager, Dispatcher, Driver
  */
 router.put(
   '/:id',
-  authorize('Administrator', 'Dispatcher', 'Driver'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher', 'Driver'),
   (req, res) => tripController.updateTrip(req, res)
 );
 
 /**
  * DELETE /api/v1/trips/:id
  * Delete a trip execution by UUID.
- * Roles: Administrator, Dispatcher
+ * Roles: Administrator, Fleet Manager, Dispatcher
  */
 router.delete(
   '/:id',
-  authorize('Administrator', 'Dispatcher'),
+  authorize('Administrator', 'Fleet Manager', 'Dispatcher'),
   (req, res) => tripController.deleteTrip(req, res)
 );
 

@@ -38,7 +38,7 @@ const fleetManagerNavItems: NavItem[] = [
   { name: 'Documents', path: '/fleet-manager/documents', icon: FileText },
   { name: 'Notifications', path: '/fleet-manager/notifications', icon: Bell },
   { name: 'Analytics', path: '/fleet-manager/analytics', icon: TrendingUp },
-  { name: 'AI Insights', path: '/fleet-manager/ai-insights', icon: Sparkles },
+  { name: 'AI Insights', path: '/fleet-manager/ai', icon: Sparkles },
   { name: 'Reports', path: '/fleet-manager/reports', icon: FileText },
   { name: 'Global Search', path: '/fleet-manager/search', icon: Search },
   { name: 'My Profile', path: '/fleet-manager/profile', icon: User },
