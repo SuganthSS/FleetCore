@@ -9,6 +9,9 @@ import { useAuth } from '@/hooks/useAuth';
 
 import { DashboardPage } from '@/pages/DashboardPage';
 import { FleetManagerDashboardPage } from '@/pages/FleetManagerDashboardPage';
+import { FleetManagerVehiclesPage } from '@/pages/fleet-manager/FleetManagerVehiclesPage';
+import { FleetManagerDriversPage } from '@/pages/fleet-manager/FleetManagerDriversPage';
+import { FleetManagerTripsPage } from '@/pages/fleet-manager/FleetManagerTripsPage';
 import { VehiclesPage } from '@/pages/VehiclesPage';
 import { VehicleDetailsPage } from '@/pages/VehicleDetailsPage';
 import { DriversPage } from '@/pages/DriversPage';
@@ -121,11 +124,11 @@ const router = createBrowserRouter([
         children: [
           { path: '/fleet-manager', element: <Navigate to="/fleet-manager/dashboard" replace /> },
           { path: '/fleet-manager/dashboard', element: <FleetManagerDashboardPage /> },
-          { path: '/fleet-manager/vehicles', element: <VehiclesPage /> },
+          { path: '/fleet-manager/vehicles', element: <FleetManagerVehiclesPage /> },
           { path: '/fleet-manager/vehicles/:id', element: <VehicleDetailsPage /> },
-          { path: '/fleet-manager/drivers', element: <DriversPage /> },
+          { path: '/fleet-manager/drivers', element: <FleetManagerDriversPage /> },
           { path: '/fleet-manager/drivers/:id', element: <DriverProfilePage /> },
-          { path: '/fleet-manager/trips', element: <TripsPage /> },
+          { path: '/fleet-manager/trips', element: <FleetManagerTripsPage /> },
           { path: '/fleet-manager/trips/:id', element: <TripDetailsPage /> },
           { path: '/fleet-manager/fuel', element: <FuelPage /> },
           { path: '/fleet-manager/maintenance', element: <MaintenancePage /> },
