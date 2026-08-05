@@ -12,6 +12,9 @@ import { FleetManagerDashboardPage } from '@/pages/FleetManagerDashboardPage';
 import { FleetManagerVehiclesPage } from '@/pages/fleet-manager/FleetManagerVehiclesPage';
 import { FleetManagerDriversPage } from '@/pages/fleet-manager/FleetManagerDriversPage';
 import { FleetManagerTripsPage } from '@/pages/fleet-manager/FleetManagerTripsPage';
+import { FleetManagerFuelPage } from '@/pages/fleet-manager/FleetManagerFuelPage';
+import { FleetManagerMaintenancePage } from '@/pages/fleet-manager/FleetManagerMaintenancePage';
+import { FleetManagerTrackingPage } from '@/pages/fleet-manager/FleetManagerTrackingPage';
 import { VehiclesPage } from '@/pages/VehiclesPage';
 import { VehicleDetailsPage } from '@/pages/VehicleDetailsPage';
 import { DriversPage } from '@/pages/DriversPage';
@@ -130,9 +133,9 @@ const router = createBrowserRouter([
           { path: '/fleet-manager/drivers/:id', element: <DriverProfilePage /> },
           { path: '/fleet-manager/trips', element: <FleetManagerTripsPage /> },
           { path: '/fleet-manager/trips/:id', element: <TripDetailsPage /> },
-          { path: '/fleet-manager/fuel', element: <FuelPage /> },
-          { path: '/fleet-manager/maintenance', element: <MaintenancePage /> },
-          { path: '/fleet-manager/tracking', element: <TrackingPage /> },
+          { path: '/fleet-manager/fuel', element: <FleetManagerFuelPage /> },
+          { path: '/fleet-manager/maintenance', element: <FleetManagerMaintenancePage /> },
+          { path: '/fleet-manager/tracking', element: <FleetManagerTrackingPage /> },
           { path: '/fleet-manager/notifications', element: <NotificationCenterPage /> },
           { path: '/fleet-manager/documents', element: <DocumentLibraryPage /> },
           { path: '/fleet-manager/profile', element: <MyProfilePage /> },
