@@ -44,8 +44,21 @@ app.use(
 );
 
 // Middlewares
-const corsOptions = {
-  origin: config.frontendUrl || 'http://localhost:5173',
+const allowedOrigins = Array.from(new Set([
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://fleet-core.vercel.app',
+  ...(config.frontendUrl ? [config.frontendUrl] : []),
+]));
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS policy error: Origin ${origin} not allowed`));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
