@@ -25,13 +25,13 @@ import { FleetManagerProfilePage } from '@/pages/fleet-manager/FleetManagerProfi
 import { FleetManagerSearchPage } from '@/pages/fleet-manager/FleetManagerSearchPage';
 
 import { DispatcherDashboardPage } from '@/pages/dispatcher/DispatcherDashboardPage';
+import { DispatcherDispatchCenterPage as DispatchCenterPage } from '@/pages/dispatcher/DispatcherDispatchCenterPage';
+import { DispatcherTripsPage } from '@/pages/dispatcher/DispatcherTripsPage';
+import { DispatcherShipmentsPage } from '@/pages/dispatcher/DispatcherShipmentsPage';
+import { DispatcherRoutesPage } from '@/pages/dispatcher/DispatcherRoutesPage';
+import { DispatcherDriversPage } from '@/pages/dispatcher/DispatcherDriversPage';
+import { DispatcherVehiclesPage } from '@/pages/dispatcher/DispatcherVehiclesPage';
 import {
-  DispatchCenterPage,
-  DispatcherTripsPage,
-  DispatcherShipmentsPage,
-  DispatcherRoutesPage,
-  DispatcherDriversPage,
-  DispatcherVehiclesPage,
   DispatcherTrackingPage,
   DispatcherNotificationsPage,
   DispatcherDocumentsPage,

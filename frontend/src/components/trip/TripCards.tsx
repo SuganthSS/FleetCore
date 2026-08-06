@@ -8,7 +8,7 @@ interface TripCardsProps {
   trips: Trip[];
   onView: (trip: Trip) => void;
   onEdit: (trip: Trip) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const TripCards: React.FC<TripCardsProps> = ({
@@ -118,13 +118,15 @@ export const TripCards: React.FC<TripCardsProps> = ({
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                 </button>
-                <button
-                  onClick={() => onDelete(trip.id)}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                  title="Delete Trip"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                {onDelete && (
+                  <button
+                    onClick={() => onDelete(trip.id)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    title="Delete Trip"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
