@@ -24,9 +24,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
   if (allowedRoles && allowedRoles.length > 0 && roleName) {
 
     if (!allowedRoles.includes(roleName)) {
-      // Redirect Fleet Manager away from Admin pages
+      // Redirect Fleet Manager away from unauthorized pages
       if (roleName === 'Fleet Manager') {
         return <Navigate to="/fleet-manager/dashboard" replace />;
+      }
+      // Redirect Dispatcher away from unauthorized pages
+      if (roleName === 'Dispatcher') {
+        return <Navigate to="/dispatcher/dashboard" replace />;
       }
       // Redirect Admin away to admin dashboard
       return <Navigate to="/dashboard" replace />;

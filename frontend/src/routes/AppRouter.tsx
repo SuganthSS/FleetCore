@@ -2,6 +2,7 @@ import React from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { FleetManagerLayout } from '@/layouts/FleetManagerLayout';
+import { DispatcherLayout } from '@/layouts/DispatcherLayout';
 import { AuthLayout } from '@/layouts/AuthLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
@@ -22,6 +23,22 @@ import { FleetManagerNotificationsPage } from '@/pages/fleet-manager/FleetManage
 import { FleetManagerDocumentsPage } from '@/pages/fleet-manager/FleetManagerDocumentsPage';
 import { FleetManagerProfilePage } from '@/pages/fleet-manager/FleetManagerProfilePage';
 import { FleetManagerSearchPage } from '@/pages/fleet-manager/FleetManagerSearchPage';
+
+import { DispatcherDashboardPage } from '@/pages/dispatcher/DispatcherDashboardPage';
+import {
+  DispatchCenterPage,
+  DispatcherTripsPage,
+  DispatcherShipmentsPage,
+  DispatcherRoutesPage,
+  DispatcherDriversPage,
+  DispatcherVehiclesPage,
+  DispatcherTrackingPage,
+  DispatcherNotificationsPage,
+  DispatcherDocumentsPage,
+  DispatcherAIPage,
+  DispatcherSearchPage,
+  DispatcherProfilePage,
+} from '@/pages/dispatcher/DispatcherPlaceholders';
 
 import { VehiclesPage } from '@/pages/VehiclesPage';
 import { VehicleDetailsPage } from '@/pages/VehicleDetailsPage';
@@ -60,6 +77,9 @@ const RoleBasedRoot: React.FC = () => {
   const roleName = user?.roleName;
   if (roleName === 'Fleet Manager') {
     return <Navigate to="/fleet-manager/dashboard" replace />;
+  }
+  if (roleName === 'Dispatcher') {
+    return <Navigate to="/dispatcher/dashboard" replace />;
   }
   return <Navigate to="/dashboard" replace />;
 };
@@ -152,6 +172,31 @@ const router = createBrowserRouter([
           { path: '/fleet-manager/profile', element: <FleetManagerProfilePage /> },
           { path: '/fleet-manager/search', element: <FleetManagerSearchPage /> },
           { path: '/fleet-manager/settings', element: <SettingsPage /> },
+        ],
+      },
+    ],
+  },
+  /* ── Dispatcher Protected Routes (SPEC-301) ── */
+  {
+    element: <ProtectedRoute allowedRoles={['Dispatcher', 'Administrator']} />,
+    children: [
+      {
+        element: <DispatcherLayout />,
+        children: [
+          { path: '/dispatcher', element: <Navigate to="/dispatcher/dashboard" replace /> },
+          { path: '/dispatcher/dashboard', element: <DispatcherDashboardPage /> },
+          { path: '/dispatcher/dispatch-center', element: <DispatchCenterPage /> },
+          { path: '/dispatcher/trips', element: <DispatcherTripsPage /> },
+          { path: '/dispatcher/shipments', element: <DispatcherShipmentsPage /> },
+          { path: '/dispatcher/routes', element: <DispatcherRoutesPage /> },
+          { path: '/dispatcher/drivers', element: <DispatcherDriversPage /> },
+          { path: '/dispatcher/vehicles', element: <DispatcherVehiclesPage /> },
+          { path: '/dispatcher/tracking', element: <DispatcherTrackingPage /> },
+          { path: '/dispatcher/notifications', element: <DispatcherNotificationsPage /> },
+          { path: '/dispatcher/documents', element: <DispatcherDocumentsPage /> },
+          { path: '/dispatcher/ai', element: <DispatcherAIPage /> },
+          { path: '/dispatcher/search', element: <DispatcherSearchPage /> },
+          { path: '/dispatcher/profile', element: <DispatcherProfilePage /> },
         ],
       },
     ],
