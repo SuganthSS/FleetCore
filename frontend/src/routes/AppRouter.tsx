@@ -31,14 +31,12 @@ import { DispatcherShipmentsPage } from '@/pages/dispatcher/DispatcherShipmentsP
 import { DispatcherRoutesPage } from '@/pages/dispatcher/DispatcherRoutesPage';
 import { DispatcherDriversPage } from '@/pages/dispatcher/DispatcherDriversPage';
 import { DispatcherVehiclesPage } from '@/pages/dispatcher/DispatcherVehiclesPage';
-import {
-  DispatcherTrackingPage,
-  DispatcherNotificationsPage,
-  DispatcherDocumentsPage,
-  DispatcherAIPage,
-  DispatcherSearchPage,
-  DispatcherProfilePage,
-} from '@/pages/dispatcher/DispatcherPlaceholders';
+import { DispatcherTrackingPage } from '@/pages/dispatcher/DispatcherTrackingPage';
+import { DispatcherNotificationsPage } from '@/pages/dispatcher/DispatcherNotificationsPage';
+import { DispatcherDocumentsPage } from '@/pages/dispatcher/DispatcherDocumentsPage';
+import { DispatcherAIPage } from '@/pages/dispatcher/DispatcherAIPage';
+import { DispatcherSearchPage } from '@/pages/dispatcher/DispatcherSearchPage';
+import { DispatcherProfilePage } from '@/pages/dispatcher/DispatcherProfilePage';
 
 import { VehiclesPage } from '@/pages/VehiclesPage';
 import { VehicleDetailsPage } from '@/pages/VehicleDetailsPage';

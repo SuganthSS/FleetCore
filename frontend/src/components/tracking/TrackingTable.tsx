@@ -6,7 +6,7 @@ interface TrackingTableProps {
   records: TrackingRecord[];
   onView: (record: TrackingRecord) => void;
   onEdit: (record: TrackingRecord) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   onSort: (field: string) => void;
@@ -128,13 +128,15 @@ export const TrackingTable: React.FC<TrackingTableProps> = ({
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
-                    <button
-                      onClick={() => onDelete(record.id)}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      title="Delete Record"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {onDelete && (
+                      <button
+                        onClick={() => onDelete(record.id)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Delete Record"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

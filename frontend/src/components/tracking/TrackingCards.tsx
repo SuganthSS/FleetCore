@@ -6,7 +6,7 @@ interface TrackingCardsProps {
   records: TrackingRecord[];
   onView: (record: TrackingRecord) => void;
   onEdit: (record: TrackingRecord) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
   selectedRecordId?: string;
   onSelectRecord?: (record: TrackingRecord) => void;
 }
@@ -111,16 +111,18 @@ export const TrackingCards: React.FC<TrackingCardsProps> = ({
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                 </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(record.id);
-                  }}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                  title="Delete Log"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                {onDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(record.id);
+                    }}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    title="Delete Log"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           </div>

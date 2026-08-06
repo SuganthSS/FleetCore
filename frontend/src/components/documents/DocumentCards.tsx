@@ -5,7 +5,7 @@ import { DocumentItem } from '@/services/document.service';
 interface DocumentCardsProps {
   documents: DocumentItem[];
   onPreview: (doc: DocumentItem) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export const DocumentCards: React.FC<DocumentCardsProps> = ({ documents, onPreview, onDelete }) => {
@@ -67,13 +67,15 @@ export const DocumentCards: React.FC<DocumentCardsProps> = ({ documents, onPrevi
               >
                 <Download className="h-4 w-4" />
               </a>
-              <button
-                onClick={() => onDelete(doc.id)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
-                title="Delete"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              {onDelete && (
+                <button
+                  onClick={() => onDelete(doc.id)}
+                  className="p-1.5 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
